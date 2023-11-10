@@ -1,0 +1,147 @@
+substitutions:
+  name: "c3mic"
+  friendly_name: "c3mic"
+
+esphome:
+  name: "$name"
+  friendly_name: "$friendly_name"
+  project:
+    name: "BigBobbas.c3mic"
+    version: "2023.11.01"
+
+  platformio_options:
+    board_build.flash_mode: dio
+
+  on_boot:
+    then:
+      - light.turn_on:
+          id: led_ww
+          effect: fast pulse
+      - delay: 5s
+      - lambda: id(va).set_use_wake_word(true);
+
+dashboard_import:
+  package_import_url: github://bigbobbas/esp_firmware/c3mic.yaml@main
+  import_full_config: true
+
+esp32:
+  board: esp32-c3-devkitm-1
+  framework:
+    type: esp-idf
+
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+api:
+      
+ota:
+
+wifi:
+  ap:
+    password: "12345678"
+
+captive_portal:
+
+esp32_improv:
+  authorizer: none
+
+improv_serial:
+
+web_server:
+  port: 80
+
+sensor:
+  - platform: internal_temperature
+    name: "Internal Temperature"
+
+  - platform: wifi_signal 
+    name: "WiFi Signal dB"
+    id: wifi_signal_db
+    update_interval: 60s
+    entity_category: "diagnostic"
+
+  - platform: copy 
+    source_id: wifi_signal_db
+    name: "WiFi Signal Percent"
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "Signal %"
+    entity_category: "diagnostic"
+
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+    ssid:
+      name: SSID
+    bssid:
+      name: BSSID
+    mac_address:
+      name: Mac Address
+    dns_address:
+      name: DNS
+
+button:
+  - platform: restart
+    id: reboot
+    name: "Reboot"
+    
+output:
+  - platform: ledc
+    pin: GPIO8
+    id: ledww
+    inverted: True
+
+light:
+  - platform: monochromatic
+    id: led_ww
+    output: ledww
+    name: "led_ww"
+    effects:
+      - pulse:
+      - pulse:
+          name: "Fast Pulse"
+          transition_length: 0.5s
+          update_interval: 0.5s
+          min_brightness: 0%
+          max_brightness: 100%
+
+i2s_audio:
+  i2s_lrclk_pin: GPIO2
+  i2s_bclk_pin: GPIO3
+
+microphone:
+  - platform: i2s_audio
+    id: va_mic
+    adc_type: external
+    i2s_din_pin: GPIO4
+    channel: left
+    pdm: false
+
+
+voice_assistant:
+  id: va
+  microphone: va_mic
+  noise_suppression_level: 1
+  volume_multiplier: 4
+  on_client_connected:
+        then:
+          - voice_assistant.start_continuous:
+          - light.turn_off: led_ww
+  on_client_disconnected:
+        then:
+          - voice_assistant.stop:
+  on_wake_word_detected:
+        then:
+          - light.turn_on:
+              id: led_ww
+              effect: fast pulse
+
+  on_stt_end:
+       then: 
+         - light.turn_off: led_ww
+  on_error:
+      then:
+         - light.turn_off: led_ww
+  on_end:
+      then:
+         - light.turn_off: led_ww
