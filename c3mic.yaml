@@ -1,10 +1,10 @@
 substitutions:
-  name: "c3mic"
-  friendly_name: "c3mic"
+  name: c3mic
+  friendly_name: BigBobba c3mic
 
 esphome:
-  name: c3mic
-  friendly_name: Living Room Mic
+  name: $name
+  friendly_name: $friendly_name
   name_add_mac_suffix: true
 
   
