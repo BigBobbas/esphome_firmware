@@ -20,10 +20,6 @@ esphome:
       - light.turn_on:
           id: led_ww
           effect: fast pulse
-dashboard_import:
-  package_import_url: github://bigbobbas/esp_firmware/c3mic.yaml@main
-  import_full_config: false
-  
   
 esp32:
   board: esp32-c3-devkitm-1
@@ -47,16 +43,11 @@ api:
 ota:
 
 wifi:
-
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  
 web_server:
   port: 80
-
-captive_portal:
-
-esp32_improv:
-  authorizer: none
-
-improv_serial:
 
 sensor:
 
