@@ -1,0 +1,21 @@
+{
+  "name": "Big Bobbas C3 Microphone",
+  "version": "2023.10.5",
+  "home_assistant_domain": "esphome",
+  "builds": [
+    {
+      "chipFamily": "ESP32-C3",
+      "parts": [
+        { "path": "firmware-factory.bin", "offset": 0 }
+     ]
+    }
+  ]
+}
+  
+   
+  
+   
+  
+   
+   
+  
