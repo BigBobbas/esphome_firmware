@@ -119,12 +119,6 @@ voice_assistant:
   on_stt_end:
        then: 
          - light.turn_off: led_ww
-  on_error:
-      then:
-         - light.turn_off: led_ww
-  on_end:
-      then:
-         - light.turn_off: led_ww
   on_wake_word_detected:
         then:
           - light.turn_on:
