@@ -1,5 +1,6 @@
 # firmware for C3 "super mini 16 pin" with inmp441 mic"
 # for use with homeassistant voice assistant
+#gitdesk test
 
 substitutions:
   name: "c3mic"
