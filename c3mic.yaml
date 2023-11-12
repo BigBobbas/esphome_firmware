@@ -1,5 +1,6 @@
 # firmware for C3 "super mini 16 pin" with inmp441 mic"
 # for use with homeassistant voice assistant
+# DASHBOARD INSTALL
 
 substitutions:
   name: "c3mic"
