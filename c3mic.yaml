@@ -1,4 +1,6 @@
-# this is a test 
+# firmware for C3 "super mini 16 pin" with inmp441 mic"
+# for use with homeassistant voice assistant
+
 substitutions:
   name: "c3mic"
   friendly_name: "BigBobba c3mic"
