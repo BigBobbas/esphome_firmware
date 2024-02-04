@@ -3,6 +3,8 @@
 - touchscreen
 - voice assistant
 - aht20 temp & humidity sensor
+- battery status
+- top left button
 
 The config also includes custom pages, with time and HA sensor states on the idle page.
 
