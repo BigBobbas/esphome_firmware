@@ -1,5 +1,5 @@
 esphome:
-  name: obww2
+  name: esp32s3test
   platformio_options:
     board_build.flash_mode: dio
   on_boot:
