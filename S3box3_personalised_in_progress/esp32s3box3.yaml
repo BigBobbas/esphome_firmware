@@ -1,5 +1,5 @@
 substitutions:
-  name: colin
+  name: esp32s3box3
   loading_illustration_file: images/loading.png
   idle_illustration_file: images/idle_320_240.png
   listening_illustration_file: images/listening_320_240.png
