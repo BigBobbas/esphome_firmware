@@ -1,0 +1,167 @@
+esphome:
+  name: obww2
+  platformio_options:
+    board_build.flash_mode: dio
+  on_boot:
+    - light.turn_on:
+        id: led_ww
+        blue: 100%
+        brightness: 60%
+        effect: fast pulse
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_ESP32S3_DATA_CACHE_LINE_64B: "y"
+      CONFIG_AUDIO_BOARD_CUSTOM: "y"
+   
+psram:
+  mode: octal
+  speed: 80MHz
+
+logger:
+
+ota:
+
+wifi:
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
+
+api:
+  on_client_connected:
+        then:
+          - delay: 50ms
+          - light.turn_off: led_ww
+          - micro_wake_word.start:
+  on_client_disconnected:
+        then:
+          - voice_assistant.stop: 
+
+button:
+  - platform: restart
+    name: "Restart"
+    id: but_rest
+
+switch:
+  - platform: template
+    id: mute
+    name: mute
+    optimistic: true
+    on_turn_on: 
+      - micro_wake_word.stop:
+      - voice_assistant.stop:
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 30%
+    on_turn_off:
+      - micro_wake_word.start:
+      - light.turn_on:
+          id: led_ww           
+          red: 0%
+          green: 100%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww 
+   
+light:
+  - platform: esp32_rmt_led_strip
+    id: led_ww
+    rgb_order: GRB
+    pin: GPIO48
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "on board light"
+    effects:
+      - pulse:
+      - pulse:
+          name: "Fast Pulse"
+          transition_length: 0.5s
+          update_interval: 0.5s
+          min_brightness: 0%
+          max_brightness: 100%
+          
+          
+ # Audio and Voice Assistant Config      
+
+i2s_audio:
+  - id: i2s_mic
+    i2s_lrclk_pin: GPIO3
+    i2s_bclk_pin: GPIO2
+  - id: i2s_spk
+    i2s_lrclk_pin: GPIO6
+    i2s_bclk_pin: GPIO7
+
+microphone:
+  platform: i2s_audio
+  id: va_mic
+  adc_type: external
+  i2s_audio_id: i2s_mic
+  i2s_din_pin: GPIO4
+  channel: left
+  pdm: false
+
+speaker:
+  platform: i2s_audio
+  id: va_spk
+  dac_type: external
+  i2s_audio_id: i2s_spk
+  i2s_dout_pin: GPIO8
+    
+external_components:
+  - source: github://kahrendt/esphome-on-device-wake-word
+    components: micro_wake_word
+    refresh: 0s 
+
+micro_wake_word:
+  on_wake_word_detected:
+    - voice_assistant.start:
+    - light.turn_on:
+        id: led_ww           
+        red: 30%
+        green: 30%
+        blue: 70%
+        brightness: 60%
+        effect: fast pulse 
+  model: github://kahrendt/esphome-on-device-wake-word/trained_models/okay_nabu/stream_state_internal_quantized.tflite
+    
+voice_assistant:
+  id: va
+  microphone: va_mic
+  speaker: va_spk
+  noise_suppression_level: 2.0
+  volume_multiplier: 4.0
+  on_stt_end:
+       then: 
+         - light.turn_off: led_ww
+  on_error:
+          - micro_wake_word.start:  
+  on_end:
+        then:
+          - light.turn_off: led_ww
+          - wait_until:
+              not:
+                voice_assistant.is_running:
+          - micro_wake_word.start:        
+
