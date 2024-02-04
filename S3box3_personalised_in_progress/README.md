@@ -1,4 +1,4 @@
-## h2 This is my own config which includes the following support
+## This is my own config which includes the following support
 - presence sensor
 - touchscreen
 - voice assistant
