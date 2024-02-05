@@ -131,7 +131,7 @@ micro_wake_word:
         blue: 70%
         brightness: 60%
         effect: fast pulse 
-  model: github://kahrendt/esphome-on-device-wake-word/trained_models/okay_nabu/stream_state_internal_quantized.tflite
+  model: https://github.com/kahrendt/esphome-on-device-wake-word/raw/dev/trained_models/okay_nabu_v5_1/tflite_stream_state_internal_quant/stream_state_internal_quantize.tflite
     
 voice_assistant:
   id: va

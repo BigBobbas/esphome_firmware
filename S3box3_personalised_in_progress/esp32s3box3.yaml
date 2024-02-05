@@ -1,5 +1,5 @@
 substitutions:
-  name: colin
+  name: esp32s3box3
   loading_illustration_file: images/loading.png
   idle_illustration_file: images/idle_320_240.png
   listening_illustration_file: images/listening_320_240.png
@@ -106,7 +106,7 @@ logger:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
-  use_address: 192.168.1.179
+  #use_address: xxx.xxx.xxx.xxx - add ip address if .local name not resolving
   ap:
   on_connect:
     - script.execute: draw_display
