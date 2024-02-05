@@ -1,0 +1,47 @@
+esphome:
+  name: d1miniva
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+    
+logger:
+
+api:
+  on_client_connected:
+        then:
+          - delay: 10s
+          - voice_assistant.start_continuous:
+          - lambda: id(va).set_use_wake_word(true);
+      
+ota:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+# This yaml was tested with the INMP441 I2s Microphone
+# The L/R pin of the INMP441 is connected to ground
+# According to the datasheets, connecting L/R to ground denotes that the microphone should output to the left channel,
+# however in order for the microphone to function on a WROOM32 board Variant the configuration needs to be set to RIGHT
+# THIS MAY DIFFER SO ALWAYS TRY THE LEFT CHANNEL IF YOUR ARE TROUBLESHOOTING
+
+i2s_audio:
+  i2s_lrclk_pin: GPIO25  #INMP4441 PIN == WS
+  i2s_bclk_pin: GPIO32  #INMP$$! PIN == SCLK
+
+microphone:
+  - platform: i2s_audio
+    id: va_mic
+    adc_type: external
+    i2s_din_pin: GPIO33  #INMP441 PIN == SD
+    channel: right
+    pdm: false
+
+voice_assistant:
+  id: va
+  microphone: va_mic
+  noise_suppression_level: 1
+  volume_multiplier: 4.0
+
