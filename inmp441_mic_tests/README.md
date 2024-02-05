@@ -1,4 +1,4 @@
-## These are recording samples from and inmp441 in an enclosure connected to an ESP32 standard Wroom32.
+## These are recording samples from an inmp441 installed in an enclosure with an ESP32 Wroom32.
 
 all recordings were sampled in the same location and recordings made using the assist_pipeline debug.
 
