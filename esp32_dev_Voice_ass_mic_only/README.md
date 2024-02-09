@@ -18,4 +18,4 @@ in order to test that audio is being streamed to Home Assistant and to check the
 - if your recordings are quiet then increase the volume_multiplier: or lower if they are too loud and distorted.
 
   Once you are happy with the level and clarity of the audio being streamed to Home Assistant you should be good to go and your ESPHome device is functioning as it should be. If you are experiencing issues with wakeword not being detected, or voice commands not functioning, you need to look into the related services within Home Assistant. 
-Samples of inmp441 recordings are available [here](https://github.com/BigBobbas/esphome_firmware/tree/main/inmp441_mic_tests)
+Samples of inmp441 recordings are available [here](https://github.com/BigBobbas/esphome_firmware/tree/main/Mic_test/inmp441_mic_tests)
