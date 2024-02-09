@@ -26,5 +26,5 @@ https://github.com/BigBobbas/esphome_firmware/assets/150487209/f3aded02-412a-488
 
 
 
-https://github.com/BigBobbas/esphome_firmware/assets/150487209/bcadf52a-3238-4684-990d-cfbf08d7f3a3
+https://github.com/BigBobbas/esphome_firmware/assets/150487209/bcadf52a-3238-4684-990d-cfbf08d7f3a3 
 
