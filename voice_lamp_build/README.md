@@ -1,0 +1,27 @@
+### This is my project to take a broken lamp/room atomiser and convert it to a multi sensor with integrated voice assistant.
+![20240217_224832](https://github.com/BigBobbas/esphome_firmware/assets/150487209/9467379c-cc30-4fa0-8d69-1bf85fde5fcf)
+
+
+**Parts :-**
+- Faulty lamp carcass
+- WS8212b Led's ring, matrix or strips (undecided)
+- esp32 c3 supermini - for WLED controller - untested
+- esp32 s3 N16R8 for Voice and sensors
+- BH1750 - lux sensor
+- AHT20 / BMP280 - Temperature, Humidity, Pressure
+- LD2410c Radar mmwave presence sensor
+- TP2422 Touch sensor / button
+- SSD1306 OLED (possibility if can install and keep it aesthetically pleasing)
+
+
+**Operation :-**
+- Light to operate as a flame / candle effect in normal use. Turn on or off with long press of the touch button.
+- Light will automate to 'normal' on state upon detection of presence if the light level is below the pre-defined threshold.
+- Light will automate to off state when the still energy falls below the calibrated defined threshold and time delay of x
+- Short press of button will allow voice command without wakeword, button release will return VA to previous state.
+- wakeword detect will change led colours/effect to indicate wakeword has been detected.
+- VA Mute on double press possibly - may add another button.
+- Oled display to show time / room temp + heating set temp / outside temp / VA in progress / VA Mute or active
+- Lamp light to indicate - person on the drive - doorbell pressed - washing machine finished - dryer finished - along with voice alerts.
+
+
