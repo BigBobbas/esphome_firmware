@@ -116,10 +116,7 @@ microphone:
     channel: left
     pdm: false
     
-external_components:
-  - source: github://kahrendt/esphome-on-device-wake-word
-    components: micro_wake_word
-    refresh: 0s 
+
 
 micro_wake_word:
   on_wake_word_detected:
@@ -131,7 +128,7 @@ micro_wake_word:
         blue: 70%
         brightness: 60%
         effect: fast pulse 
-  model: https://github.com/kahrendt/esphome-on-device-wake-word/raw/dev/trained_models/okay_nabu_v5_1/tflite_stream_state_internal_quant/stream_state_internal_quantize.tflite
+  model: hey_jarvis
     
 voice_assistant:
   id: va

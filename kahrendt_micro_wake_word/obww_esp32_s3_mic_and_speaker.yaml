@@ -129,11 +129,6 @@ speaker:
   i2s_audio_id: i2s_spk
   i2s_dout_pin: GPIO8
     
-external_components:
-  - source: github://kahrendt/esphome-on-device-wake-word
-    components: micro_wake_word
-    refresh: 0s 
-
 micro_wake_word:
   on_wake_word_detected:
     - voice_assistant.start:
@@ -144,7 +139,7 @@ micro_wake_word:
         blue: 70%
         brightness: 60%
         effect: fast pulse 
-  model: https://github.com/kahrendt/esphome-on-device-wake-word/raw/dev/trained_models/okay_nabu_v5_1/tflite_stream_state_internal_quant/stream_state_internal_quantize.tflite
+  model: hey_jarvis
     
 voice_assistant:
   id: va
