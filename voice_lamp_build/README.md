@@ -6,11 +6,14 @@
 - Faulty lamp carcass
 - WS8212b Led's ring, matrix or strips (undecided)
 - esp32 c3 supermini - for WLED controller - untested
+  >installed tested and working. Thinking of trying it with ESPhome next
 - esp32 s3 N16R8 for Voice and sensors
+  >added 2 x 1 for esp-idf and 1 for arduino frameworks to allow for media player
 - BH1750 - lux sensor
 - AHT20 / BMP280 - Temperature, Humidity, Pressure
 - LD2410c Radar mmwave presence sensor
 - TP2422 Touch sensor / button
+  >added touch ring to top of lamp using esp32 touch pin instead
 - SSD1306 OLED (possibility if can install and keep it aesthetically pleasing)
 
 
