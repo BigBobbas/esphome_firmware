@@ -64,7 +64,7 @@ binary_sensor:
             entity_id: switch.sitting_room_sockets_s1 ####################################
 
 ```
-I have added 3 touch areas accross the top row of the screen as an example. Further information for configuring touch can be found [Here](<https://esphome.io/components/touchscreen/index.html>)
+I have added 3 touch areas across the top row of the screen as an example. Further information for configuring touch can be found [Here](<https://esphome.io/components/touchscreen/index.html>)
 
 Save and install the configuration and watch the logs that follow flashing. tap on the 3 locations and observe the logs to confirm that these register as button presses.
 
@@ -73,6 +73,8 @@ Save and install the configuration and watch the logs that follow flashing. tap 
 Now check that Voice_assistant is also working. If not, reboot the device and test all functionaility again.
 If voice or touch are not working still, then do the following.
 - comment out the whole yaml you added above.
+- save the configuration and exit the editor
+- Click on the 3 dot menu of the device card and click 'clean build files' everytime you comment out or add components to a built configuration, make sure to clean build files or you will get an error at the end of compiling and have to clean and compile again (a trait with esp-idf framework)
 - save and install and test voice. if all is working then uncomment the code and save and install again then test. 
 Removing power to the device once fully working will cause voice to stop functioning and you will need to follow the steps of commenting out the above code, re-installing and repeating if necessary.
 I use the sensor base with a battery installed to save having to power off the device should I need to unplug it.
