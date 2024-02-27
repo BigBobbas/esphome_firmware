@@ -1,4 +1,4 @@
-# H1 Voice Assistant mic audio testing For ESPHome and Home Assistant - Voice Assistant
+# Voice Assistant mic audio testing For ESPHome and Home Assistant - Voice Assistant
 
 in order to test that audio is being streamed to Home Assistant and to check the quality of the sound, follow the steps below.
 
