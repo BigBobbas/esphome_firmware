@@ -79,6 +79,29 @@ If voice or touch are not working still, then do the following.
 Removing power to the device once fully working will cause voice to stop functioning and you will need to follow the steps of commenting out the above code, re-installing and repeating if necessary.
 I use the sensor base with a battery installed to save having to power off the device should I need to unplug it.
 
+## Extras
+Presence Sensor (basic binary sensor)
+```yaml
+binary_sensor:
+  - platform: gpio
+    pin:
+      number: GPIO21
+    name: "Presence detect"
+    disabled_by_default: false
+    device_class: "occupancy"
+```
+AHT20 - Temperature & Himidity
+```yaml
+sensor:
+  - platform: aht10
+    i2c_id: bus_b
+    variant: AHT20
+    temperature:
+      name: "Temperature"
+    humidity:
+      name: "Humidity"
+    update_interval: 5s
+```
 
 
 
