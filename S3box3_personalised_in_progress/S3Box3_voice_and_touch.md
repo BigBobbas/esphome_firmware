@@ -77,6 +77,8 @@ If voice or touch are not working still, then do the following.
 - Click on the 3 dot menu of the device card and click 'clean build files' everytime you comment out or add components to a built configuration, make sure to clean build files or you will get an error at the end of compiling and have to clean and compile again (a trait with esp-idf framework)
 - save and install and test voice. if all is working then uncomment the code and save and install again then test. 
 Removing power to the device once fully working will cause voice to stop functioning and you will need to follow the steps of commenting out the above code, re-installing and repeating if necessary.
+
+I have found that once the device is up and running and functioning with touch and voice, editing the config, for example adding a touch binary button will cause touch not to function after flashing. Carrying out a soft reset/reboot will rectify this. I have added the yaml below to add a 'Reboot' button to the HA inetgration or can be used in an automation on the device for instance assigning to the top left side button on the device.
 I use the sensor base with a battery installed to save having to power off the device should I need to unplug it.
 
 ## Extras
@@ -102,6 +104,12 @@ sensor:
       name: "Humidity"
     update_interval: 5s
 ```
-
+Soft Reboot button
+```yaml
+button:
+  - platform: restart
+    id: reboot
+    name: "Reboot"
+```
 
 
