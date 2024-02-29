@@ -95,7 +95,7 @@ binary_sensor:
     disabled_by_default: false
     device_class: "occupancy"
 ```
-AHT20 - Temperature & Himidity
+AHT20 - Temperature & Humidity
 ```yaml
 sensor:
   - platform: aht10
