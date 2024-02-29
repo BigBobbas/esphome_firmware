@@ -1,3 +1,7 @@
+##################################################################################
+##          This is my own personal config, feel free to use it. however you    ##
+##       will need to pick through it, it isn't tidy or pretty and is a WIP!    ##
+##################################################################################
 substitutions:
   name: esp32s3box3
   loading_illustration_file: images/loading.png
