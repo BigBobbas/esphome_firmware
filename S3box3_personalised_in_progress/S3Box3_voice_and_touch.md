@@ -1,5 +1,9 @@
 # Configuring the Espressif ESP32-S3-Box3 to work with voice_assistant: and touchscreen: in ESPHome.
 
+
+https://github.com/BigBobbas/esphome_firmware/assets/150487209/87153460-f26b-4b4f-b243-a4ee599c5156
+
+
 >In this guide I will show the steps required to make both Voice assistant and Touchscreen work using ESPHome
 
 First you will need to flash the S3 Box with the ESPHome stock firmware. Either manually using the yaml [Here](<https://github.com/esphome/firmware/blob/main/voice-assistant/esp32-s3-box-3.yaml>) or via web installer [Here](<https://www.home-assistant.io/voice_control/s3_box_voice_assistant/#installing-the-software-onto-the-esp32-s3-box>)
