@@ -1,5 +1,5 @@
 esphome:
-  name: m5stack-atom-echo
+  name: m5stack-atom-echo #### IF YOU ALREADY HAVE THE DEVICE IN HA THEN CHANGE THIS TO EXACTLY THE SAME NAME #### 
   friendly_name: M5Stack Atom Echo
   project:
     name: m5stack.atom-echo-voice-assistant
