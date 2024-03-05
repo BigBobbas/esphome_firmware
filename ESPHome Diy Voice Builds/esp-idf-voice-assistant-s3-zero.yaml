@@ -1,0 +1,206 @@
+esphome:
+  name: esp-idf3-mini
+  platformio_options:
+    board_build.flash_mode: dio
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    version: recommended
+    sdkconfig_options:
+      CONFIG_ESP32_S3_BOX_BOARD: "y"
+   
+psram:
+  mode: quad
+  speed: 80MHz
+
+logger:
+  level: error
+
+ota:
+
+wifi:
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
+api:
+  on_client_connected:
+        then:
+          - delay: 50ms
+          - light.turn_off: led_ww
+          - micro_wake_word.start:
+  on_client_disconnected:
+        then:
+          - voice_assistant.stop: 
+external_components:
+  - source:
+      type: git
+      url: https://github.com/bigbobbas/esphome_audio
+      ref: main
+    components: [ adf_pipeline, i2s_audio ]
+    refresh: 0s
+    
+button:
+  - platform: restart
+    id: reboot
+    name: "Reboot"
+
+switch:
+  - platform: template
+    id: mute
+    name: mute
+    optimistic: true
+    on_turn_on: 
+      - micro_wake_word.stop:
+      - voice_assistant.stop:
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 30%
+    on_turn_off:
+      - micro_wake_word.start:
+      - light.turn_on:
+          id: led_ww           
+          red: 0%
+          green: 100%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww 
+
+light:
+  - platform: esp32_rmt_led_strip
+    id: led_ww
+    rgb_order: GRB
+    pin: GPIO21
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "on board light"
+    effects:
+      - pulse:
+      - pulse:
+          name: "Fast Pulse"
+          transition_length: 0.5s
+          update_interval: 0.5s
+          min_brightness: 0%
+          max_brightness: 100%
+
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO5
+    i2s_bclk_pin: GPIO6
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO11
+    i2s_bclk_pin: GPIO9
+# microphone:
+#   - platform: i2s_audio
+#     i2s_audio_id: i2s_in
+#     id: mic
+#     i2s_din_pin: GPIO4
+#     adc_type: external
+#     pdm: False
+#     channel: left
+
+# speaker:
+#   - platform: i2s_audio
+#     i2s_audio_id: i2s_out
+#     id: spk
+#     i2s_dout_pin: GPIO7
+#     dac_type: external
+#     mode: mono
+
+adf_pipeline:
+  - platform: i2s_audio
+    type: sink
+    id: adf_i2s_out
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO7
+
+  - platform: i2s_audio
+    type: source
+    id: adf_i2s_in
+    i2s_audio_id: i2s_in
+    i2s_din_pin: GPIO4
+    channel: left
+    sample_rate: 16000
+    bits_per_sample: 16bit
+
+
+microphone:
+  - platform: adf_pipeline
+    id: mic
+    pipeline:
+      - adf_i2s_in
+      - self
+
+# #speaker:
+# #  - platform: adf_pipeline
+# #    id: spk
+# #    pipeline:
+# #      - self
+# #      - adf_i2s_out
+
+
+media_player:
+  - platform: adf_pipeline
+    id: spk
+    name: idf_player-mini
+    internal: false
+    pipeline:
+      - self
+      - adf_i2s_out
+      
+micro_wake_word:
+  sliding_window_average_size: 5
+  on_wake_word_detected:
+    - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
+    - voice_assistant.start:
+    - light.turn_on:
+        id: led_ww           
+        red: 30%
+        green: 30%
+        blue: 70%
+        brightness: 60%
+        effect: fast pulse 
+
+  model: hey_jarvis
+voice_assistant:
+  id: va
+  microphone: mic
+  media_player: spk
+  noise_suppression_level: 2
+  auto_gain: 16dBFS
+  volume_multiplier: 6
+  use_wake_word: false
+  on_stt_end:
+    - light.turn_off: led_ww
+  on_error:
+    - micro_wake_word.start:  
+  on_end:
+    - light.turn_off: led_ww
+    - wait_until:
+        not:
+          voice_assistant.is_running:
+    - micro_wake_word.start:        
+
+    
+
+
+
+    
+    
