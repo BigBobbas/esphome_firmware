@@ -1,7 +1,7 @@
 esphome:
   name: esp32s3test
   platformio_options:
-    board_build.flash_mode: qio
+    board_build.flash_mode: dio
   on_boot:
     - light.turn_on:
         id: led_ww
