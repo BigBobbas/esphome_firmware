@@ -1,0 +1,659 @@
+esphome:
+  name: watch
+  platformio_options:
+    board_build.flash_mode: dio
+  on_boot:
+    then:
+      - light.turn_on: 
+          id: led
+          brightness: 50%
+      - display.page.show: home_page
+      # - delay: 30s
+      # - light.turn_off: led
+  
+      
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    version: recommended
+    sdkconfig_options:
+      # need to set a s3 compatible board for the adf-sdk to compile
+      # board specific code is not used though
+        CONFIG_ESP32_S3_BOX_BOARD: "y"
+        CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "16"
+        CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM: "512"
+        CONFIG_TCPIP_RECVMBOX_SIZE: "512"
+        CONFIG_ESP_TLS_SKIP_SERVER_CERT_VERIFY: "Y"
+        CONFIG_TCP_SND_BUF_DEFAULT: "65535"
+        CONFIG_TCP_WND_DEFAULT: "512000"
+        CONFIG_TCP_RECVMBOX_SIZE: "512"
+  flash_size: 16MB
+  
+psram:
+  mode: octal
+  speed: 80MHz
+  
+logger:
+  hardware_uart: uart0
+
+# deep_sleep:
+#   id: sleep_1
+#   run_duration: 30s
+#   wakeup_pin: 
+#     number: 16
+#     allow_other_uses: true
+#     inverted: true
+#   wakeup_pin_mode: KEEP_AWAKE
+
+api:
+  on_client_connected:
+    then:
+      - pcf8563.read_time:
+      - if:
+          condition:
+            api.connected:
+          then:
+            - lambda: |-
+                id(api_connection) = true;
+          else:
+            - lambda: |-
+                id(api_connection) = false;
+
+ota:
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+time:
+  - platform: pcf8563
+    id: rtc_time
+    i2c_id: general
+    address: 0x51
+    update_interval: never
+
+  - platform: homeassistant
+    on_time_sync:
+      then:
+        pcf8563.write_time:
+      
+i2c:
+  - id: general
+    sda: 10
+    scl: 11
+  - id: tsc
+    sda: 39
+    scl: 40
+ 
+spi:
+  - id: tft
+    clk_pin: GPIO18
+    mosi_pin: GPIO13
+    interface: hardware
+    
+button:
+  - platform: restart
+    name: reboot
+    id: rst_but
+
+remote_transmitter:
+  pin: 2
+  carrier_duty_percent: 50%
+  
+external_components:
+  - source:
+      type: git
+      url: https://github.com/gnumpi/esphome_audio
+      ref: dev-next
+    components: [ adf_pipeline, i2s_audio ]
+    refresh: 0s  
+    
+  - source: github://pr#6520
+    components: voice_assistant
+    refresh: 0s    
+
+  # - source: custom
+    # components: [ axp2101 ] 
+ 
+# sensor:
+
+  # - platform: template
+    # name: "Wakeup Cause"
+    # accuracy_decimals: 0
+    # lambda: return esp_sleep_get_wakeup_cause();
+    
+  # - platform: axp2101
+    # model: M5CORE2
+    # address: 0x34
+    # i2c_id: general
+    # update_interval: 30s
+    # brightness: 75%
+    # battery_voltage:
+      # name: "Battery Voltage"
+    # battery_level:
+      # name: "Battery Level"
+    # battery_charging:
+      # name: "Battery Charging"
+ 
+adf_pipeline:
+  - platform: i2s_audio
+    type: audio_out
+    id: adf_spk
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO46
+    
+  - platform: i2s_audio
+    type: audio_in
+    id: adf_mic
+    i2s_audio_id: i2s_in
+    i2s_din_pin: GPIO47
+    channel: right
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    pdm: true
+
+microphone:
+  - platform: adf_pipeline
+    id: adf_microphone
+    gain_log2: 3
+    keep_pipeline_alive: false
+    pipeline:
+      - adf_mic
+      - self
+
+media_player:
+  - platform: adf_pipeline
+    id: adf_media_player
+    name: watch player
+    keep_pipeline_alive: false
+    internal: false
+    pipeline:
+      - self
+      - adf_spk
+      
+      
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO44
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO15
+    i2s_bclk_pin: GPIO48
+
+# microphone:
+  # - platform: i2s_audio
+    # id: mic
+    # i2s_audio_id: i2s_in
+    # i2s_din_pin: 47
+    # bits_per_sample: 16bit
+    # adc_type: external
+    # channel: right
+    # pdm: true
+    
+# speaker:
+  # - platform: i2s_audio
+    # id: spk
+    # i2s_audio_id: i2s_out
+    # i2s_dout_pin: GPIO46
+    # dac_type: external
+
+voice_assistant:
+  id: va
+  microphone: adf_microphone
+  media_player: adf_media_player
+  noise_suppression_level: 1
+  volume_multiplier: 4
+  use_wake_word: false
+  # on_start:
+  #   - deep_sleep.prevent: sleep_1
+  on_tts_end:
+    - display.page.show: done_page
+  on_error:
+    - voice_assistant.stop
+    - display.page.show: home_page 
+  on_end:
+    - display.page.show: home_page
+    # - delay: 30s
+    # - light.turn_off: led
+    # - delay: 60s
+    # - deep_sleep.enter:
+    #     id: sleep_1
+ 
+output:
+  - platform: ledc
+    pin: GPIO45
+    id: backlight_output
+
+light:
+  - platform: monochromatic
+    id: led
+    name: LCD Backlight
+    entity_category: config
+    output: backlight_output
+    default_transition_length: 500ms
+    restore_mode: RESTORE_AND_ON
+
+interval:
+  - interval: 10s
+    then:
+      - if:
+          condition:
+            wifi.connected:
+          then:
+            - lambda: |-
+                id(wifi_connection) = true;
+          else:
+            - lambda: |-
+                id(wifi_connection) = false;
+                
+globals: 
+  - id: wifi_connection
+    type: bool
+    restore_value: no
+    initial_value: "false"
+  - id: api_connection
+    type: bool
+    restore_value: no
+    initial_value: "false" 
+    
+font:
+  - file: "fonts/consola.ttf"
+    id: my_font3
+    size: 38
+    
+  - file: "fonts/consola.ttf"
+    id: my_font2
+    size: 20
+    
+  - file: "fonts/consola.ttf"
+    id: my_font1
+    size: 24
+   
+  - file: "fonts/consola.ttf"
+    id: my_font4
+    size: 16
+
+  - file: "fonts/consola.ttf"
+    id: my_font
+    size: 14
+
+  - file: "fonts/consola.ttf"
+    id: my_font5
+    size: 30
+
+  - file: "fonts/consola.ttf"
+    id: my_font6
+    size: 40
+
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_65
+    size: 60
+    glyphs: ["\U000F036D", "\U000F036C", "\U000F0079", "\U000F0082",
+     "\U000F0081", "\U000F0080", "\U000F007F", "\U000F007E", "\U000F007D",
+      "\U000F007C", "\U000F007B", "\U000F007A", "\U000F10CD", "\U000F0510",
+       "\U000F050F", "\U000F02DC", "\U000F024A", "\U000F03F5", "\U000F03F6", 
+       "\U000F11AB", "\U000F16BD", "\U000F16BC", "\U000F0827", "\U000F1247"]
+       
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_25
+    size: 55
+    glyphs: ["\U000F036D", "\U000F036C", "\U000F0079", "\U000F0082",
+     "\U000F0081", "\U000F0080", "\U000F007F", "\U000F007E", "\U000F007D",
+      "\U000F007C", "\U000F007B", "\U000F007A", "\U000F10CD", "\U000F0510",
+       "\U000F050F", "\U000F02DC", "\U000F024A", "\U000F03F5", "\U000F03F6", 
+       "\U000F11AB", "\U000F16BD", "\U000F16BC", "\U000F07D0", "\U000F1247", "\U000F12A8", "\U000F087B"]
+
+  - file: "fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_80
+    size: 70
+    glyphs: ["\U000F1322", "\U000F12D4", "\U000F12D3", "\U000F0238", "\U000F0B2C", "\U000F0B26", "\U000F024A", "\U000F1987", "\U000F04C8"]
+     #tools
+     #garage open
+     #garage closed
+     #heating
+     #up
+     #down
+     #garden
+     #floods
+     #spots
+
+
+
+  - file: "fonts/DSEG14Classic-Regular.ttf"    
+    id: my_font8
+    size: 72
+
+  - file: "fonts/DSEG7Classic-Regular.ttf"
+    id: my_font7
+    size: 58
+
+color:
+  - id: green
+    hex: '75D15F'
+  - id: red
+    hex: 'FF3131'
+  - id: blue
+    hex: '47B7E9'
+  - id: blue_drk
+    hex: '085296'
+  - id: amber
+    hex: 'FBAB35'
+  - id: lime
+    hex: '20FC30'
+  - id: pink
+    hex: 'D92BBC'
+  - id: yellow
+    hex: 'FFC000'
+  - id: black
+    hex: '000000'
+  - id: white
+    hex: 'ffffff'
+  - id: purple
+    hex: '73264D'
+  - id: text_red
+    hex: 'FF3131'
+  - id: text_green
+    hex: '75D15F'
+  - id: text_blue
+    hex: '47B7E9'
+  - id: text_amber
+    hex: 'FBAB35'
+  - id: text_lime
+    hex: '20FC30'
+  - id: text_pink
+    hex: 'D92BBC' 
+        
+image:
+  - file: "watch2.png"
+    id: home
+    resize: 240x240
+    type: RGB24
+    
+  - file: "command.png"
+    id: command_img
+    resize: 240x240
+    type: RGB24
+    
+  - file: "loading.png"
+    id: loading_img
+    resize: 240x240
+    type: RGB24
+    
+  - file: "done.png"
+    id: done_img
+    resize: 240x240
+    type: RGB24
+
+  - file: "time.png"
+    id: time_img
+    resize: 240x240
+    type: RGB24
+
+display:
+  - platform: ili9xxx
+    model: ST7789V
+    id: screen
+    transform:
+      mirror_x: true
+      mirror_y: true
+      swap_xy: false
+    dimensions:
+      width: 240
+      height: 240
+      offset_width: 0
+      offset_height: 80
+    invert_colors: true
+    cs_pin: 12
+    dc_pin: 38
+    pages:
+      - id: home_page
+        lambda: |-
+          it.image(0, 0, id(time_img));
+          it.strftime(120, 155, id(my_font2), black, TextAlign::CENTER, "%A %d %b", id(rtc_time).now());
+          it.strftime(120, 105, id(my_font7), black, TextAlign::CENTER, "%H:%M", id(rtc_time).now());
+          it.printf(110, 2, id(icon_font_25), black, "%s", id(wifi_connection) ?  "\U000F16BD" : "\U000F16BC");
+          it.printf(55, 2, id(icon_font_25), black, "%s", id(api_connection) ?  "\U000F07D0" : "\U000F087B");
+          it.printf(10, 2, id(icon_font_25), black, "\U000F0079");       
+          it.printf(120, 205, id(icon_font_25), black, TextAlign::CENTER, "\U000F12A8"); 
+          
+      - id: command_page
+        lambda: |-
+          it.image(0, 0, id(command_img));
+          it.strftime(120, 185, id(my_font2), black, TextAlign::CENTER, "%A %d %b", id(rtc_time).now());
+          it.strftime(120, 210, id(my_font3), black, TextAlign::CENTER, "%H:%M", id(rtc_time).now());
+          
+      - id: loading_page
+        lambda: |-
+          it.image(0, 0, id(loading_img));
+          
+      - id: done_page
+        lambda: |-
+          it.image(0, 0, id(done_img));
+          it.strftime(120, 185, id(my_font2), black, TextAlign::CENTER, "%A %d %b", id(rtc_time).now());
+          it.strftime(120, 210, id(my_font3), black, TextAlign::CENTER, "%H:%M", id(rtc_time).now());
+
+      - id: control_page
+        lambda: |-
+          it.fill(id(white));
+          it.printf(0, 0, id(icon_font_80), black, "\U000F0B2C");
+          it.printf(80, 0, id(icon_font_80), black, "\U000F12D3");  
+          it.printf(160, 0, id(icon_font_80), black, "\U000F0B26");  
+
+          it.printf(0, 80, id(icon_font_80), black, "\U000F0B2C");  
+          it.printf(80, 80, id(icon_font_80), black, "\U000F0238");  
+          it.printf(160, 80, id(icon_font_80), black, "\U000F0B26");  
+
+          it.printf(0, 160, id(icon_font_80), black, "\U000F024A");  
+          it.printf(80, 160, id(icon_font_80), black, "\U000F04C8");  
+          it.printf(160, 160, id(icon_font_80), black, "\U000F1322");  
+
+          
+touchscreen:
+  - platform: ft63x6
+    interrupt_pin: 
+      number: GPIO16
+      # allow_other_uses: true
+    address: 0x38
+    display: screen
+    id: tscreen
+    i2c_id: tsc
+    calibration:
+      x_min: 0
+      x_max: 240
+      y_min: 0
+      y_max: 240
+    on_touch:
+      - light.turn_on: 
+          id: led
+          brightness: 50%
+      # - delay: 30s
+      # - light.turn_off: led
+
+binary_sensor:
+  - platform: touchscreen
+    page_id: home_page
+    id: touch_talk
+    x_min: 0
+    x_max: 240
+    y_min: 0
+    y_max: 185
+    on_click:
+      min_length: 350ms
+      max_length: 1000ms
+      then: 
+        - voice_assistant.start:
+        - display.page.show: command_page
+
+  - platform: touchscreen
+    page_id: home_page
+    id: controls
+    x_min: 0
+    x_max: 240
+    y_min: 186
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: control_page  
+        
+  - platform: touchscreen
+    page_id: control_page
+    id: back_home
+    x_min: 0
+    x_max: 240
+    y_min: 186
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page     
+
+  - platform: touchscreen
+    page_id: command_page
+    id: back_home2
+    x_min: 0
+    x_max: 240
+    y_min: 186
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page           
+    
+##### control page #####
+  - platform: touchscreen
+    page_id: control_page
+    id: cp1  #gar up
+    x_min: 0
+    x_max: 79
+    y_min: 0
+    y_max: 79
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+     
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp2  #gar sens
+    x_min: 80
+    x_max: 159
+    y_min: 0
+    y_max: 79
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp3 #gar down
+    x_min: 160
+    x_max: 240
+    y_min: 0
+    y_max: 79
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp4 # heat up
+    x_min: 0
+    x_max: 79
+    y_min: 80
+    y_max: 159
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp5 # heating
+    x_min: 80  
+    x_max: 159
+    y_min: 80
+    y_max: 159
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp6  # heat down
+    x_min: 160
+    x_max: 240
+    y_min: 80
+    y_max: 159
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - display.page.show: home_page
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp7  # garden light
+    x_min: 0
+    x_max: 79
+    y_min: 160
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - homeassistant.service:
+            service: switch.toggle
+            data:
+              entity_id: switch.back_garden_sockets_s2
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp8  # garage light
+    x_min: 80
+    x_max: 159
+    y_min: 160
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - homeassistant.service:
+            service: switch.toggle
+            data:
+              entity_id: switch.workshop_light
+        - homeassistant.service:
+            service: switch.toggle
+            data:
+              entity_id: switch.garage_light
+
+
+  - platform: touchscreen
+    page_id: control_page
+    id: cp9  # shed light
+    x_min: 160
+    x_max: 240
+    y_min: 160
+    y_max: 240
+    on_click:
+      min_length: 10ms
+      max_length: 300ms
+      then: 
+        - homeassistant.service:
+            service: switch.toggle
+            data:
+              entity_id: switch.shed_light_esp_shed_light
+
+##### control page END #####
