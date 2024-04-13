@@ -1,3 +1,12 @@
+![rn_image_picker_lib_temp_059e9878-03e1-423b-ba1f-4a625da54a51](https://github.com/BigBobbas/esphome_firmware/assets/150487209/399acea5-e9ce-4b4e-a10f-be3934e4e83b)
+
+![1](https://github.com/BigBobbas/esphome_firmware/assets/150487209/ff02d74a-4575-40d9-9305-ccfc0e316781)
+
+![2](https://github.com/BigBobbas/esphome_firmware/assets/150487209/b21d6fda-2f63-47e6-a888-f8a2566a015c)
+
+![3](https://github.com/BigBobbas/esphome_firmware/assets/150487209/c5397abc-e2b2-474c-91e4-3250a2c22856)
+
+
 Video Demo here https://youtube.com/shorts/SqN-0dx5RhM?si=qapFh7S1hyZQu1GR
 
 This little thing is great ... who can resist wearing your ESPHome device and controlling your home from your wrist.
