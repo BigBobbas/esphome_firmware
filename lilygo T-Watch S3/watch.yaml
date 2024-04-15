@@ -172,10 +172,8 @@ voice_assistant:
   on_error:
     - voice_assistant.stop
     - display.page.show: home_page 
-  # on_end:
-  #   - display.page.show: home_page
-  #   - delay: 30s
-  #   - light.turn_off: led
+  on_end:
+    - display.page.show: home_page
  
 output:
   - platform: ledc
@@ -446,6 +444,9 @@ binary_sensor:
       min_length: 1ms
       max_length: 500ms
       then: 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - voice_assistant.start:
         - display.page.show: command_page
 #home controls page button
@@ -460,6 +461,9 @@ binary_sensor:
       min_length: 10ms
       max_length: 500ms
       then: 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - display.page.show: control_page  
 #voice command page - double tap screen to return home
   - platform: touchscreen
@@ -473,6 +477,9 @@ binary_sensor:
       min_length: 10ms
       max_length: 500ms
       then: 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - voice_assistant.stop
         - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
         - display.page.show: home_page
@@ -491,7 +498,10 @@ binary_sensor:
     on_click:
       min_length: 10ms
       max_length: 500ms
-      then: 
+      then:
+        - light.turn_on: 
+            id: led
+            brightness: 50% 
         - display.page.show: home_page
 
 #garage roller toggle
@@ -506,6 +516,9 @@ binary_sensor:
       min_length: 10ms
       max_length: 500ms
       then: 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - homeassistant.service:
             service: input_boolean.toggle
             data:
@@ -521,7 +534,10 @@ binary_sensor:
     on_click:
       min_length: 10ms
       max_length: 500ms
-      then: 
+      then:
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
         - homeassistant.service:
             service: switch.toggle
@@ -543,6 +559,9 @@ binary_sensor:
         min_length: 10ms
         max_length: 500ms
         then:
+          - light.turn_on: 
+              id: led
+              brightness: 50%
           - homeassistant.service: 
                 service: alarm_control_panel.alarm_arm_away
                 data:
@@ -558,7 +577,10 @@ binary_sensor:
     on_click:
       min_length: 10ms
       max_length: 500ms
-      then: 
+      then:
+        - light.turn_on: 
+            id: led
+            brightness: 50% 
         - homeassistant.service:
             service: input_boolean.toggle
             data:
@@ -575,8 +597,10 @@ binary_sensor:
       min_length: 10ms
       max_length: 500ms
       then: 
-        - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
-        - light.turn_off: led 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
+        - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3 
         - display.page.show: home_page
 #back garden flood lights
   - platform: touchscreen
@@ -590,6 +614,9 @@ binary_sensor:
       min_length: 10ms
       max_length: 500ms
       then: 
+        - light.turn_on: 
+            id: led
+            brightness: 50%
         - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
         - homeassistant.service:
             service: switch.toggle
@@ -606,7 +633,10 @@ binary_sensor:
     on_click:
       min_length: 10ms
       max_length: 500ms
-      then: 
+      then:
+        - light.turn_on: 
+            id: led
+            brightness: 50% 
         - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
         - homeassistant.service:
             service: switch.toggle
@@ -623,7 +653,10 @@ binary_sensor:
     on_click:
       min_length: 10ms
       max_length: 500ms
-      then: 
+      then:
+        - light.turn_on: 
+            id: led
+            brightness: 50% 
         - media_player.play_media: http://192.168.1.8:8123/local/vad.mp3
         - homeassistant.service:
             service: switch.toggle
