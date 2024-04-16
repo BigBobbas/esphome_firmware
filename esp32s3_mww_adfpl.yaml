@@ -14,7 +14,7 @@ esp32:
   framework:
     type: esp-idf
     version: recommended
-    #### changed - BigBobba
+
     sdkconfig_options:
         CONFIG_ESP32_S3_BOX_BOARD: "y"
         CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "16"
@@ -23,7 +23,7 @@ esp32:
         CONFIG_TCP_SND_BUF_DEFAULT: "65535"
         CONFIG_TCP_WND_DEFAULT: "512000"
         CONFIG_TCP_RECVMBOX_SIZE: "512"
-   ##### finished change to block
+
 psram:
   mode: octal
   speed: 80MHz
@@ -32,8 +32,8 @@ logger:
 ota:
 
 wifi:
-    ssid: 'MYSSID'
-    password: 'MYPASSssssss'
+    ssid: !secret wifi_ssid
+    password: !secret wifi_password
 
 api:
   on_client_connected:
@@ -107,7 +107,6 @@ light:
           
           
  # Audio and Voice Assistant Config  
-##### started changes ##### 
 external_components:
   - source:
       type: git
@@ -115,30 +114,6 @@ external_components:
       ref: main
     components: [ adf_pipeline, i2s_audio ]
     refresh: 0s  
-sensor:
-  - platform: homeassistant
-    id: in_set_temp
-    entity_id: climate.house_thermostat
-    attribute: temperature
-    internal: true
-
-  - platform: homeassistant
-    id: liv_temp
-    entity_id: sensor.living_room_temp
-    internal: true
-
-  - platform: homeassistant
-    id: kitch_temp
-    entity_id: sensor.kitchen_temp_ble_temperature
-    internal: true
- 
-  - platform: homeassistant
-    id: car_bat
-    entity_id: sensor.kona_ev_battery_level
-    internal: true
-
-  - platform: uptime
-    name: Uptime Sensor
 
 adf_pipeline:
   - platform: i2s_audio
