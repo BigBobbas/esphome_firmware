@@ -1,0 +1,216 @@
+esphome:
+  name: esp32s3test
+  platformio_options:
+    board_build.flash_mode: dio
+  on_boot:
+    - light.turn_on:
+        id: led_ww
+        blue: 100%
+        brightness: 60%
+        effect: fast pulse
+esp32:
+  board: esp32-s3-devkitc-1
+  variant: esp32s3
+  framework:
+    type: esp-idf
+    version: recommended
+    #### changed - BigBobba
+    sdkconfig_options:
+        CONFIG_ESP32_S3_BOX_BOARD: "y"
+        CONFIG_ESP32_WIFI_STATIC_RX_BUFFER_NUM: "16"
+        CONFIG_ESP32_WIFI_DYNAMIC_RX_BUFFER_NUM: "512"
+        CONFIG_TCPIP_RECVMBOX_SIZE: "512"
+        CONFIG_TCP_SND_BUF_DEFAULT: "65535"
+        CONFIG_TCP_WND_DEFAULT: "512000"
+        CONFIG_TCP_RECVMBOX_SIZE: "512"
+   ##### finished change to block
+psram:
+  mode: octal
+  speed: 80MHz
+  
+logger:
+ota:
+
+wifi:
+    ssid: 'MYSSID'
+    password: 'MYPASSssssss'
+
+api:
+  on_client_connected:
+        then:
+          - delay: 50ms
+          - light.turn_off: led_ww
+          - micro_wake_word.start:
+  on_client_disconnected:
+        then:
+          - voice_assistant.stop: 
+
+button:
+  - platform: restart
+    name: "Restart"
+    id: but_rest
+
+switch:
+  - platform: template
+    id: mute
+    name: mute
+    optimistic: true
+    on_turn_on: 
+      - micro_wake_word.stop:
+      - voice_assistant.stop:
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww
+      - light.turn_on:
+          id: led_ww           
+          red: 100%
+          green: 0%
+          blue: 0%
+          brightness: 30%
+    on_turn_off:
+      - micro_wake_word.start:
+      - light.turn_on:
+          id: led_ww           
+          red: 0%
+          green: 100%
+          blue: 0%
+          brightness: 60%
+          effect: fast pulse 
+      - delay: 2s
+      - light.turn_off:
+          id: led_ww 
+   
+light:
+  - platform: esp32_rmt_led_strip
+    id: led_ww
+    rgb_order: GRB
+    pin: GPIO48
+    num_leds: 1
+    rmt_channel: 0
+    chipset: ws2812
+    name: "on board light"
+    effects:
+      - pulse:
+      - pulse:
+          name: "Fast Pulse"
+          transition_length: 0.5s
+          update_interval: 0.5s
+          min_brightness: 0%
+          max_brightness: 100%
+          
+          
+ # Audio and Voice Assistant Config  
+##### started changes ##### 
+external_components:
+  - source:
+      type: git
+      url: https://github.com/gnumpi/esphome_audio
+      ref: main
+    components: [ adf_pipeline, i2s_audio ]
+    refresh: 0s  
+sensor:
+  - platform: homeassistant
+    id: in_set_temp
+    entity_id: climate.house_thermostat
+    attribute: temperature
+    internal: true
+
+  - platform: homeassistant
+    id: liv_temp
+    entity_id: sensor.living_room_temp
+    internal: true
+
+  - platform: homeassistant
+    id: kitch_temp
+    entity_id: sensor.kitchen_temp_ble_temperature
+    internal: true
+ 
+  - platform: homeassistant
+    id: car_bat
+    entity_id: sensor.kona_ev_battery_level
+    internal: true
+
+  - platform: uptime
+    name: Uptime Sensor
+
+adf_pipeline:
+  - platform: i2s_audio
+    type: audio_out
+    id: adf_spk
+    i2s_audio_id: i2s_out
+    i2s_dout_pin: GPIO8
+    
+  - platform: i2s_audio
+    type: audio_in
+    id: adf_mic
+    i2s_audio_id: i2s_in
+    i2s_din_pin: GPIO4
+    channel: left
+    sample_rate: 16000
+    bits_per_sample: 16bit
+    pdm: false
+
+microphone:
+  - platform: adf_pipeline
+    id: adf_microphone
+    gain_log2: 3
+    keep_pipeline_alive: false
+    pipeline:
+      - adf_mic
+      - self
+
+media_player:
+  - platform: adf_pipeline
+    id: adf_media_player
+    name: Media player
+    keep_pipeline_alive: false
+    internal: false
+    pipeline:
+      - self
+      - adf_spk
+            
+i2s_audio:
+  - id: i2s_in
+    i2s_lrclk_pin: GPIO3
+    i2s_bclk_pin: GPIO2
+  - id: i2s_out
+    i2s_lrclk_pin: GPIO6
+    i2s_bclk_pin: GPIO7
+
+micro_wake_word:
+  on_wake_word_detected:
+    - voice_assistant.start:
+    - light.turn_on:
+        id: led_ww           
+        red: 30%
+        green: 30%
+        blue: 70%
+        brightness: 60%
+        effect: fast pulse 
+  model: okay_nabu
+
+voice_assistant:
+  id: va
+  microphone: adf_microphone
+  media_player: adf_media_player
+  noise_suppression_level: 1
+  volume_multiplier: 4
+  on_stt_end:
+       then: 
+         - light.turn_off: led_ww
+  on_error:
+          - micro_wake_word.start:  
+  on_end:
+        then:
+          - light.turn_off: led_ww
+          - wait_until:
+              not:
+                voice_assistant.is_running:
+          - micro_wake_word.start:        
