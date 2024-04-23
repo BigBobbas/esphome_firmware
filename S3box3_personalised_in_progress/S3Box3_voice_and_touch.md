@@ -9,7 +9,7 @@ https://github.com/BigBobbas/esphome_firmware/assets/150487209/87153460-f26b-4b4
 First you will need to flash the S3 Box with the ESPHome stock firmware found [Here](<https://github.com/BigBobbas/esphome_firmware/blob/main/S3box3_personalised_in_progress/esp32-s3box3-esphome.yaml>) This is an edited config to allow you to install using ESPHome dashboard. Short video [Here](<https://github.com/BigBobbas/esphome_firmware/blob/main/S3box3_personalised_in_progress/ESPHome%20Dashboard%20.mp4>) showing how to manually add a config to the dashboard.  I Have also included a [.bin file](<https://github.com/BigBobbas/esphome_firmware/blob/main/S3box3_personalised_in_progress/esp32-s3-box-3-factory.bin>) to allow flashing without compiling.
 
 - Once the device is installed, establish connectivity with HA and confirm that Voice_assistant is working.
-- Reboot the device and edit the config yaml adding the following.
+- Reboot the device and edit the device config yaml adding the following.
 ```yaml
 i2c:
   - id: bus_a
