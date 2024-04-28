@@ -33,7 +33,7 @@ touchscreen:
   i2c_id: bus_a
   id: gt911_touchscreen
   interrupt_pin: GPIO3
-
+binary_sensor:
   - platform: touchscreen
     name: Top Left Touch Button
     x_min: 0
@@ -54,7 +54,7 @@ touchscreen:
           service: switch.toggle                      ### add your own automation here ###
           data:                                       ###  ##########################  ###
             entity_id: switch.sitting_room_sockets_s2 ####################################
-binary_sensor:
+
   - platform: touchscreen
     name: Top right Touch Button
     x_min: 200
