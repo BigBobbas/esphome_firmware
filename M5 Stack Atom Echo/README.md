@@ -1,4 +1,4 @@
-## M5 Stack Atom echo - ESPHome Voice Assistant
+## M5 Stack Atom echo & ESP32-S3-Box-3 -  ESPHome Voice Assistant
 >This configuration is an edited version of the offical config that can be flashed via the ESPHome web installer.
 >The alternative method here allows you to add the full config to the ESPHome dashboard you can then easily make changes to the config. The ESPHome web installer only includes a basic configuration which doesn't easy allow for customisation. I will describe two methods for installation below. These methods are not exclusive to the M5 Stack Atom Echo and can be applied to any ESPHome device.
 
@@ -23,7 +23,7 @@ https://github.com/BigBobbas/esphome_firmware/assets/150487209/1fd827ec-4f0a-411
   8. Select the upload method applicable to your.
   9. Once the config has been uploaded the comple log window should proced do display the logs, if the logs do not show, then exit the editor and try again by clicking on 'logs' on the device card.
 
- * Method 2 - you have no device in the dashboard and need to creat a device card.
+ * Method 2 - you have no device in the dashboard and need to create a device card.
    
 https://github.com/BigBobbas/esphome_firmware/assets/150487209/b9a26691-4a4f-4097-8192-abedbbb2ae77
 
@@ -33,9 +33,9 @@ https://github.com/BigBobbas/esphome_firmware/assets/150487209/b9a26691-4a4f-409
   4. At the encryption screen click skip as you do not want to install at this point.
   5. A new device card should now be showing in the dashboard, click edit.
   6. you will now see the base config that was created when carrying out the previous steps. Press CTRL & A to select all and then press delete.
-  8. Copy the code  from [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/M5%20Stack%20Atom%20Echo/m5stack-echo-stock-esphome.yaml>)
-  9. paste the copied config into the now blank edit page by pressing CTRL & V
-  10. make any changes required * note that if the device has previously been added to HA then you will need to change the name: for the device to avoid any issues with HA being unable to connect to the device, you will also need to make sure that api: encryption key is copied across and any other relevant credentials.
+  8. Copy the code  from [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/M5%20Stack%20Atom%20Echo/m5stack-echo-stock-esphome.yaml>) for the M5 Stack Atom Echo or [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/S3box3_personalised_in_progress/esp32-s3box3-esphome.yaml>)
+  9. paste the copied config into the now blank config card by pressing CTRL & V
+  10. make any changes required * note that if the device has previously been added to HA then you will need to change the name: for the device to avoid any issues with HA being unable to connect to the device (use the name: previously installed to the device, you will also need to make sure that api: encryption key is copied across and any other relevant credentials.
   11. Click save and install
   12. Select the upload method applicable to your setup.
   13. Once the config has been uploaded the comple log window should proced do display the logs, if the logs do not show, then exit the editor and try again by clicking on 'logs' on the device card
