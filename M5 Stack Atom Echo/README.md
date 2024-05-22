@@ -16,7 +16,7 @@ https://github.com/BigBobbas/esphome_firmware/assets/150487209/1fd827ec-4f0a-411
   1. click edit on the device card in the dashboard.
   2. Press CTRL & A on your keyboard to 'select all' 
   3. Press delete on your keyboard.
-  4. Copy the code  from [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/M5%20Stack%20Atom%20Echo/m5stack-echo-stock-esphome.yaml>) for the M5 Stack Atom Echo or [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/S3box3_personalised_in_progress/esp32-s3box3-esphome.yaml>)
+  4. Copy the code  from [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/M5%20Stack%20Atom%20Echo/m5stack-echo-stock-esphome.yaml>) for the M5 Stack Atom Echo or [here](<https://github.com/BigBobbas/esphome_firmware/blob/main/ESPHOME%20ESP32-S3-Box-3/esp32-s3box3-esphome.yaml>) for the S3box
   5. paste the copied config into the now blank edit page by pressing CTRL & V
   6. make any changes required * note that if the device has previously been added to HA then you will need to change the name: for the device to avoid any issues with HA being unable to connect to the device, you will also need to make sure that api: encryption key is copied across and any other relevant credentials. To avoid issues delete the previously installed device in the ESPHome integration if this is applicable.
   7. Click save and install
