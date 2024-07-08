@@ -16,6 +16,7 @@ api:
           - lambda: id(va).set_use_wake_word(true);
       
 ota:
+  - platform: esphome
 
 wifi:
   ssid: !secret wifi_ssid
