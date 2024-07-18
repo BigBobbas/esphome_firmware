@@ -1,4 +1,3 @@
----
 substitutions:
   name: esp32-s3-box-3
   friendly_name: ESP32 S3 Box 3
@@ -40,7 +39,7 @@ esphome:
     board_build.flash_mode: dio
   project:
     name: esphome.voice-assistant
-    version: "24.7.5.1"
+    version: "24.7.17.1"
   on_boot:
     priority: 600
     then:
@@ -107,6 +106,7 @@ logger:
 wifi:
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+
   ap:
   on_connect:
     - script.execute: draw_display
@@ -182,7 +182,8 @@ speaker:
     id: box_speaker
 
 micro_wake_word:
-  model: ${micro_wake_word_model}
+  models:
+    - ${micro_wake_word_model}
   on_wake_word_detected:
     - voice_assistant.start:
         wake_word: !lambda return wake_word;
