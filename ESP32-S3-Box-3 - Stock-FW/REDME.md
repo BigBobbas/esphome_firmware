@@ -1,5 +1,5 @@
 ## ESPHome - ESP32-S3-Box-3 .bin manual install process
-1. Download the s3b_stock.bin file
+1. Download the [s3b_stock.bin](<https://github.com/BigBobbas/esphome_firmware/blob/main/ESP32-S3-Box-3%20-%20Stock-FW/s3b_stock.bin>) file
 2. go to https://web.esphome.io
 3. connect your S3 Box 3 to your computer with a usb DATA cable
 4. click connect <br>![image](https://github.com/user-attachments/assets/93794a42-6712-405e-b87e-218ac95dd43a)<br><br>
