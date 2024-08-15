@@ -18,7 +18,7 @@ You should then get 'connecting' followed by 'erasing' and then the install will
 You should now see a list of available wireless networks that the device can connect to.<br><br>
 ![image](https://github.com/user-attachments/assets/92d05d5e-bde3-4a04-8e10-66b3f3f913cc)<br><br>
 Once connected - on the computer that you connected to disconnect from esp32-s3-box-3 and connect to your usual network.
-The box should now be connected to your wireless network and you can continue to add the device to Home Assistant.
+The s3-box-3 should now be connected to your wireless network and you can continue to add the device to Home Assistant.
 
 
 
