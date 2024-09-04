@@ -1,3 +1,5 @@
+## Manual installation of ESP32-s3- Box 3 - ESPHome Stock firmware
+### If you would like a fully featured custom firmware then please take a look at our project [here](<https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome>) or continue below to install the ESPHome stock firmware.
 ## ESPHome - ESP32-S3-Box-3 .bin manual install process
 1. Download the [s3b_stock.bin](<https://github.com/BigBobbas/esphome_firmware/blob/main/ESP32-S3-Box-3%20-%20Stock-FW/s3b_stock.bin>) file
 2. go to https://web.esphome.io
