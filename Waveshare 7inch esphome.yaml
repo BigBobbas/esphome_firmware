@@ -1,0 +1,1542 @@
+substitutions:
+  font_glyphs: '&@!"''%()<>+=,-_.:°/$€£¥?0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ abcdefghijklmnopqrstuvwxyzÀàÁáÂâÃãÄäĀāĂăÅåǺǻẠạĄąÆæǼǽĆćĈĉČčĊċÇçĎďĐđÐðÈèÉéÊêẼẽĚěËëĒēĔĕĖėẸẹĘęĜĝǦǧĞğĠġĢģĤĥĦħıÌìÍíÎîĨĩÏïĪīĬĭİỊịĮįȷĴĵĶķĸĹĺĽľĻļŁłĿŀŃńÑñŇňŅņƝɲŊŋŉÒòÓóÔôÕõÖöŌōŎŏŐőỌọǪǫØøǾǿŒœŔŕŘřŖŗŚśŜŝŠšŞşȘșẞßŤťŢţȚțŦŧÞþÙùÚúÛûŨũÜüŪūŬŭŮůŰűỤụŲųẀẁẂẃŴŵẄẅỲỳÝýŶŷỸỹŸÿȲȳŹźŽžŻżĲĳƏə'  
+esphome:
+  name: 7inch
+  friendly_name: 7inch
+  platformio_options:
+    # build_unflags: -Werror=all
+    board_build.flash_mode: dio
+  on_boot:
+    script.execute: backlight_off
+
+esp32:
+  board: esp32-s3-devkitc-1
+  framework:
+    type: esp-idf
+    platform_version: 6.8.1
+    version: 5.3.0
+    sdkconfig_options:
+      CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: "y"
+      CONFIG_ESP32S3_DATA_CACHE_64KB: "y"
+      CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
+      CONFIG_SPIRAM_RODATA: y
+  flash_size: 16MB
+psram:
+  mode: octal
+  speed: 80MHz
+  
+api:
+logger:
+  hardware_uart: USB_SERIAL_JTAG
+
+wifi: 
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+
+ota:
+  platform: esphome
+  
+time:
+  - platform: sntp
+    id: sntp_time
+    servers:
+     - ntp0.ntp-servers.net
+     - ntp1.ntp-servers.net
+     - ntp2.ntp-servers.net
+    on_time_sync:
+      - script.execute: time_update
+    on_time:
+      - minutes: '*'
+        seconds: 0
+        then:
+          - script.execute: time_update
+
+ch422g:
+  - id: io_ex
+    address: 0x24
+
+i2c:
+  sda: 8
+  scl: 9
+  frequency: 400kHz
+  scan: false
+  id: bus_a
+
+touchscreen:
+  - platform: gt911
+    i2c_id: bus_a
+    address: 0x5D
+    id: device_touchscreen
+    on_touch:
+      then:
+        - script.execute: backlight_off
+
+display:
+  - platform: rpi_dpi_rgb
+    id: device_display
+    update_interval: never
+    auto_clear_enabled: false
+    color_order: RGB
+    pclk_frequency: 16MHz
+    dimensions:
+      width: 800
+      height: 480
+    reset_pin:
+      ch422g: io_ex
+      number: 3
+    de_pin:
+      number: 5
+    hsync_pin:
+      number: 46
+      ignore_strapping_warning: true
+    vsync_pin:
+      number: 3
+      ignore_strapping_warning: true
+    # enable_pin:
+      # # allow_other_uses: true
+      # ch422g: io_ex
+      # number: 2
+    pclk_pin: 7
+    pclk_inverted: true
+    hsync_back_porch: 8
+    hsync_front_porch: 8
+    hsync_pulse_width: 4
+    vsync_back_porch: 16
+    vsync_front_porch: 16
+    vsync_pulse_width: 4
+    data_pins:
+      red:
+        - 1         #r3.
+        - 2         #r4.
+        - 42        #r5
+        - 41        #r6
+        - 40        #r7
+      blue:
+        - 14        #b3
+        - 38        #b4
+        - 18        #b5
+        - 17        #b6
+        - 10        #b7
+      green:
+        - 39        #g2
+        - 0         #g3.
+        - 45        #g4
+        - 48        #g5
+        - 47        #g6
+        - 21        #g7
+
+output:
+  - platform: ledc
+    pin: GPIO6
+    id: backlight_output
+    zero_means_zero: true
+light:
+  - platform: monochromatic
+    id: backlight
+    name: Back Light
+    entity_category: config
+    output: backlight_output
+    restore_mode: ALWAYS_ON
+
+switch:
+  - platform: template
+    id: heat_boost
+    restore_mode: ALWAYS_OFF
+    optimistic: true
+    on_turn_on:
+      - homeassistant.service:
+          service: climate.set_temperature
+          data:
+            temperature: "22"
+            entity_id: climate.house_thermostat
+      - lvgl.label.update:
+          id: heating_set_temp_label
+          text_color: red
+          text: "Boost"
+      - delay: 60min
+      - switch.turn_off: heat_boost
+    on_turn_off:
+      - lvgl.label.update:
+          id: heating_set_temp_label
+          text_color: white
+          text: "Thermostat"
+      - homeassistant.service:
+          service: climate.set_temperature
+          data:
+            temperature: "16"
+            entity_id: climate.house_thermostat
+      
+text_sensor:
+  - platform: wifi_info
+    ip_address:
+      name: IP Address
+      id: ip_addr
+      entity_category: "diagnostic"
+    ssid:
+      id: connected_ssid
+      name: SSID
+      entity_category: "diagnostic"
+    bssid:
+      id: connected_bssid
+      name: BSSID
+      entity_category: "diagnostic"
+    mac_address:
+      id: device_mac
+  - platform: homeassistant
+    id: therm
+    entity_id: climate.house_thermostat
+    internal: true
+    attribute: hvac_action
+    on_value:
+      - if:
+          condition:
+            - lambda: return x == "heating";
+          then:
+            - lvgl.label.update:
+                id: heating_set_temp_lvgl
+                text_color: red     
+          else:
+            - lvgl.label.update:
+                id: heating_set_temp_lvgl
+                text_color: blue  
+   
+  - platform: homeassistant
+    id: met_weather
+    entity_id: weather.met_office_codsall_daily
+    on_value:
+      then:
+        - script.execute: weather_update
+script:
+  - id: backlight_off
+    then:      
+      - if: 
+          condition:
+            light.is_off: backlight
+          then: 
+            - lvgl.resume:
+            - delay: 100ms
+            - light.turn_on: backlight
+            - delay: 180s
+            - light.turn_off: backlight
+            - lvgl.page.show: main_page
+            - lvgl.pause:
+                show_snow: true
+
+
+  - id: weather_update
+    then:
+      - if:
+          condition:
+            - lambda: return id(met_weather).state == "rainy";
+          then:
+            - lvgl.label.update:
+                id: display_weather
+                text_font: icon_font_120
+                text: "\U000F0597"
+          else:
+            - if:
+                condition:
+                  - lambda: return id(met_weather).state == "clear-night";
+                then:
+                  - lvgl.label.update:
+                      id: display_weather
+                      text_font: icon_font_120
+                      text: "\U000F0594"               
+                else:
+                  - if:
+                      condition:
+                        - lambda: return id(met_weather).state == "exceptional";
+                      then:
+                        - lvgl.label.update:
+                            id: display_weather
+                            text_font: icon_font_120
+                            text: "\U000F0590"
+                      else:
+                        - if:
+                            condition:
+                              - lambda: return id(met_weather).state == "hail";
+                            then:
+                              - lvgl.label.update:
+                                  id: display_weather
+                                  text_font: icon_font_120
+                                  text: "\U000F0592"
+                            else:
+                              - if:
+                                  condition:
+                                    - lambda: return id(met_weather).state == "lightning";
+                                  then:
+                                    - lvgl.label.update:
+                                        id: display_weather
+                                        text_font: icon_font_120
+                                        text: "\U000F0593"
+                                  else:
+                                    - if:
+                                        condition:
+                                          - lambda: return id(met_weather).state == "lightning-rainy";
+                                        then:
+                                          - lvgl.label.update:
+                                              id: display_weather
+                                              text_font: icon_font_120
+                                              text: "\U000F067E"
+                                        else:
+                                          - if:
+                                              condition:
+                                                - lambda: return id(met_weather).state == "partlycloudy";
+                                              then:
+                                                - lvgl.label.update:
+                                                    id: display_weather
+                                                    text_font: icon_font_120
+                                                    text: "\U000F0595"
+                                              else:
+                                                - if:
+                                                    condition:
+                                                      - lambda: return id(met_weather).state == "pouring";
+                                                    then:
+                                                      - lvgl.label.update:
+                                                          id: display_weather
+                                                          text_font: icon_font_120
+                                                          text: "\U000F0596"           
+                                                    else:
+                                                      - if:
+                                                          condition:
+                                                            - lambda: return id(met_weather).state == "snowy";
+                                                          then:
+                                                            - lvgl.label.update:
+                                                                id: display_weather
+                                                                text_font: icon_font_120
+                                                                text: "\U000F0598"  
+                                                          else:
+                                                            - if:
+                                                                condition:
+                                                                  - lambda: return id(met_weather).state == "snowy-rainy";
+                                                                then:
+                                                                  - lvgl.label.update:
+                                                                      id: display_weather
+                                                                      text_font: icon_font_120
+                                                                      text: "\U000F067F"  
+                                                                else:
+                                                                  - if:
+                                                                      condition:
+                                                                        - lambda: return id(met_weather).state == "sunny";
+                                                                      then:
+                                                                        - lvgl.label.update:
+                                                                            id: display_weather
+                                                                            text_font: icon_font_120
+                                                                            text: "\U000F0599"    
+                                                                      else:
+                                                                        - if:
+                                                                            condition:
+                                                                              - lambda: return id(met_weather).state == "sunny-rainy";
+                                                                            then:
+                                                                              - lvgl.label.update:
+                                                                                  id: display_weather
+                                                                                  text_font: icon_font_120
+                                                                                  text: "\U000F0596"  
+                                                                            else:
+                                                                              - if:
+                                                                                  condition:
+                                                                                    - lambda: return id(met_weather).state == "windy";
+                                                                                  then:
+                                                                                    - lvgl.label.update:
+                                                                                        id: display_weather
+                                                                                        text_font: icon_font_120
+                                                                                        text: "\U000F059D"  
+                                                                                  else:
+                                                                                    - if:
+                                                                                        condition:
+                                                                                          - lambda: return id(met_weather).state == "windy-variant";
+                                                                                        then:
+                                                                                          - lvgl.label.update:
+                                                                                              id: display_weather
+                                                                                              text_font: icon_font_120
+                                                                                              text: "\U000F059E" 
+                                                                                        else:
+                                                                                          - if:
+                                                                                              condition:
+                                                                                                - lambda: return id(met_weather).state == "sunny-off";
+                                                                                              then:
+                                                                                                - lvgl.label.update:
+                                                                                                    id: display_weather
+                                                                                                    text_font: icon_font_120
+                                                                                                    text: "\U000F14E4"  
+                                                                                              else:
+                                                                                                - if:
+                                                                                                    condition:
+                                                                                                      - lambda: return id(met_weather).state == "cloudy";
+                                                                                                    then:
+                                                                                                      - lvgl.label.update:
+                                                                                                          id: display_weather
+                                                                                                          text_font: icon_font_120
+                                                                                                          text: "\U000F0590"
+
+  - id: time_update
+    then:
+      - lvgl.label.update:
+          id: display_time
+          text: !lambda |-
+            static char time_buf[16];
+            auto now = id(sntp_time).now();            
+            snprintf(time_buf, sizeof(time_buf), "%02d:%02d", now.hour, now.minute);
+            return time_buf;
+
+      - lvgl.label.update:
+          id: display_day
+          text: !lambda |-
+            static const char * const days_en[] = {"Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"};
+            static char date_buf[32];
+            auto now = id(sntp_time).now();
+            const char * const * day_names;
+
+            day_names = days_en;
+           
+            snprintf(date_buf, sizeof(date_buf), "%s", day_names[now.day_of_week - 1]);
+            return date_buf;
+
+      - lvgl.label.update:
+          id: display_date
+          text: !lambda |-
+            static const char * const mon_en[] = {"January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"};
+            static char month_buf[32];
+            auto now = id(sntp_time).now();
+            const char * const * mon_names;
+
+            mon_names = mon_en;
+
+            snprintf(month_buf, sizeof(month_buf), "%02d %s", now.day_of_month, mon_names[now.month - 1]);
+            return month_buf;
+
+sensor:
+  - platform: wifi_signal
+    name: "WiFi db"
+    id: wifi_signal_db
+    update_interval: 30s
+    
+  - platform: copy 
+    source_id: wifi_signal_db
+    name: "WiFi Signal"
+    id: wifi_percent
+    filters:
+      - lambda: return min(max(2 * (x + 100.0), 0.0), 100.0);
+    unit_of_measurement: "%"
+    entity_category: "diagnostic"
+    device_class: ""  
+    
+  - platform: homeassistant
+    id: in_temp
+    entity_id: sensor.living_room_temp
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: heating_actual_temp_lvgl
+          text:
+            format: "%.0f°C"
+            args: [ 'x' ]
+            
+            
+  - platform: homeassistant
+    id: heating_set_temp
+    entity_id: climate.house_thermostat
+    attribute: temperature
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: heating_set_temp_lvgl
+          text:
+            format: "%.0f°C"
+            args: [ 'x' ]
+
+  - platform: homeassistant
+    id: real_feel_temp
+    entity_id: sensor.met_office_codsall_feels_like_temperature_daily
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: real_feel_temp_lvgl
+          text:
+            format: "%.0f°C"
+            args: [ 'x' ]
+                   
+  - platform: homeassistant
+    id: out_temp
+    entity_id: sensor.garden_temp_shed
+    internal: true 
+    on_value:
+      - lvgl.label.update:
+          id: display_out_temp
+          text:
+            format: "%.1f°C"
+            args: [ 'x' ]
+    
+  - platform: homeassistant
+    id: elec_cost
+    entity_id: sensor.octopus_energy_electricity_23e5066340_1410255970004_current_accumulative_cost
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: display_elec_cost
+          text:
+            format: "£%.2f Electric"
+            args: [ 'x' ]
+
+
+  - platform: homeassistant
+    id: gas_cost
+    entity_id: sensor.octopus_energy_gas_e6s18689962261_2471348807_current_accumulative_cost
+    internal: true   
+    on_value:
+      - lvgl.label.update:
+          id: display_gas_cost
+          text:
+            format: "£%.2f Gas"
+            args: [ 'x' ]
+      - lvgl.label.update:
+          id: display_total_energy_cost
+          text:
+            format: "£%.2f Total"
+            args: [ 'x + id(elec_cost).state' ]
+            
+
+  - platform: homeassistant
+    id: car_bat
+    entity_id: sensor.kona_ev_battery_level
+    internal: true
+    on_value:
+      - lvgl.label.update:
+          id: display_car_battery
+          text:
+            format: "Charge Level %.0f%%"
+            args: [ 'x' ]
+
+  - platform: homeassistant
+    id: car_dist
+    entity_id: sensor.kona_total_driving_range
+    internal: true
+    filters:
+      - lambda: return x * 0.62137;
+    unit_of_measurement: "mi"
+          
+    on_value:
+      - lvgl.label.update:
+          id: display_car_distance
+          text:
+            format: "Range %.0f miles"
+            args: [ 'x' ]  
+            
+binary_sensor:
+  - platform: homeassistant
+    id: dining_state
+    entity_id: switch.dining_room_esp_dining_room_esp
+    internal: true
+    publish_initial_state: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: button_1
+            state:
+              checked: !lambda return x;
+        - if:
+            condition:
+              lambda: return x == true;  
+            then:
+              - lvgl.label.update:
+                  id: dining_light_lvgl
+                  text_color: yellow
+            else:
+              - lvgl.label.update:
+                  id: dining_light_lvgl
+                  text_color: white
+
+  - platform: homeassistant
+    id: living_room_state
+    entity_id: switch.living_room
+    internal: true
+    publish_initial_state: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: button_4
+            state:
+              checked: !lambda return x;
+        - if:
+            condition:
+              lambda: return x == true;  
+            then:
+              - lvgl.label.update:
+                  id: living_room_lvgl
+                  text_color: yellow
+            else:
+              - lvgl.label.update:
+                  id: living_room_lvgl
+                  text_color: white                 
+  - platform: homeassistant
+    id: big_light_state
+    entity_id: switch.big_light_esp
+    internal: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: button_2
+            state:
+              checked: !lambda return x;  
+        - if:
+            condition:
+              lambda: return x == true;  
+            then:
+              - lvgl.label.update:
+                  id: big_light_lvgl
+                  text_color: yellow
+            else:
+              - lvgl.label.update:
+                  id: big_light_lvgl
+                  text_color: white
+            
+  - platform: homeassistant
+    id: back_light_state
+    entity_id: switch.back_room_esp
+    internal: true
+    on_state:
+      then:
+        - lvgl.widget.update:
+            id: button_3
+            state:
+              checked: !lambda return x;
+        - if:
+            condition:
+              lambda: return x == true;  
+            then:
+              - lvgl.label.update:
+                  id: back_light_lvgl
+                  text_color: yellow
+            else:
+              - lvgl.label.update:
+                  id: back_light_lvgl
+                  text_color: white
+           
+
+    
+
+
+font:
+
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font16
+    size: 16
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+      
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font28
+    size: 28
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font40
+    size: 40
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+      
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font18
+    size: 18
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'      
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font22
+    size: 22
+    bpp: 4
+    glyphs:
+      '${font_glyphs}'
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/consola.ttf"
+    id: my_font60
+    size: 60
+    glyphs:
+      '${font_glyphs}'
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_120
+    size: 120
+    bpp: 4
+    glyphs: &icon_glyphs 
+      - "\U000F0590" # mdi-weather-cloudy
+      - "\U000F0F2F" # mdi-weather-cloudy-alert
+      - "\U000F0E6E" # mdi-weather-cloudy-arrow-right
+      - "\U000F0591" # mdi-weather-fog
+      - "\U000F0592" # mdi-weather-hail
+      - "\U000F0F30" # mdi-weather-hazy
+      - "\U000F0898" # mdi-weather-hurricane
+      - "\U000F0593" # mdi-weather-lightning
+      - "\U000F067E" # mdi-weather-lightning-rainy
+      - "\U000F0594" # mdi-weather-night
+      - "\U000F0F31" # mdi-weather-night-partly-cloudy
+      - "\U000F0595" # mdi-weather-partly-cloudy
+      - "\U000F0F32" # mdi-weather-partly-lightning
+      - "\U000F0F33" # mdi-weather-partly-rainy
+      - "\U000F0F34" # mdi-weather-partly-snowy
+      - "\U000F0F35" # mdi-weather-partly-snowy-rainy
+      - "\U000F0596" # mdi-weather-pouring
+      - "\U000F0597" # mdi-weather-rainy
+      - "\U000F0598" # mdi-weather-snowy
+      - "\U000F0F36" # mdi-weather-snowy-heavy
+      - "\U000F067F" # mdi-weather-snowy-rainy
+      - "\U000F0599" # mdi-weather-sunny
+      - "\U000F0F37" # mdi-weather-sunny-alert
+      - "\U000F14E4" # mdi-weather-sunny-off
+      - "\U000F059A" # mdi-weather-sunset
+      - "\U000F059B" # mdi-weather-sunset-down
+      - "\U000F059C" # mdi-weather-sunset-up
+      - "\U000F0F38" # mdi-weather-tornado
+      - "\U000F059D" # mdi-weather-windy
+      - "\U000F059E" # mdi-weather-windy-variant
+      - "\U000F0A19"#toggle off
+      - "\U000F0521"#toggle on
+      - "\U000F0150"#clock
+      - "\U000F057E"#speaker on
+      - "\U000F0581"#speaker off
+      - "\U000F1322"#tools
+      - "\U000F12D4"#garage open
+      - "\U000F12D3"#garage closed
+      - "\U000F0238"#heating
+      - "\U000F0B2C"#up
+      - "\U000F0B26"#down
+      - "\U000F024A"#garden
+      - "\U000F1987"#floods
+      - "\U000F04C8"#spots
+      - "\U000F1722"#fire off
+      - "\U000F068A"#alarm home
+      - "\U000F099D"#alarm away
+      - "\U000F1828"#alarm night
+      - "\U000F099E"#disarmed
+      - "\U000F0565"#arming
+      - "\U000F1A12"#home button
+      - "\U000F0D90"#monitor_off
+      - "\U000F0B28"#left
+      - "\U000F192D"#electricity
+      - "\U000F1A1B"#gas
+      - "\U000F0B6C"#car battery
+      - "\U000F0873"#car miles non
+      - "\U000F0875"#car miles low
+      - "\U000F0874"#car miles full
+      - "\U000F0B2A"#right
+      - "\U000F04B9"#living room
+      - "\U000F1061"#dining
+      - "\U000F06E8"#light bulb illuminated
+      - "\U000F0335"#light bulb off
+      - "\U000F07F4"#tv
+      - "\U000F1160"#kitchen
+      - "\U000F0210"#fan
+      - "\U000F050F"#temp
+      - "\U000F01AE"#gbp pound symbol
+      - "\U000F1747"#tall lamp
+      - "\U000F0769"#ceiling
+      - "\U000F18DD"#ceiling multiple
+      - "\U000F091C"#wall light
+      - "\U000F075A"#music 
+      - "\U000F05CB"#voice
+      - "\U000F0ED4"#voice off
+      - "\U000F0FCE"#scene
+      - "\U000F040A"#play
+      - "\U000F03E4"#pause
+      - "\U000F04DB"#stop
+      - "\U000F04AD"#next track
+      - "\U000F04AE"#previous track
+      - "\U000F075E"#vol minus
+      - "\U000F075D"#vol plus
+      - "\U000F040E"#play/pause
+      - "\U000F08D6"#settings
+      - "\U000F036D"#microphone off  
+      - "\U000F032A"#energy leaf
+      
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_80
+    size: 80
+    bpp: 4
+    glyphs: *icon_glyphs
+
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_60
+    size: 60
+    bpp: 4
+    glyphs: *icon_glyphs
+          
+  - file: "https://github.com/BigBobbas/ESP32-S3-Box3-Custom-ESPHome/raw/main/fonts/materialdesignicons-webfont.ttf"
+    id: icon_font_30
+    size: 30
+    bpp: 4
+    glyphs: *icon_glyphs
+      
+color:
+  - id: green
+    hex: '75D15F'
+  - id: leaf_green
+    hex: '60A86A'
+  - id: red
+    hex: 'FF3131'
+  - id: blue
+    hex: '47B7E9'
+  - id: blue_drk
+    hex: '085296'
+  - id: amber
+    hex: 'FBAB35'
+  - id: lime
+    hex: '20FC30'
+  - id: pink
+    hex: 'D92BBC'
+  - id: yellow
+    hex: 'FFC000'
+  - id: black
+    hex: '000000'
+  - id: white
+    hex: 'ffffff'
+  - id: purple
+    hex: '73264D'
+  - id: light_blue
+    hex: '2E98DA'
+  - id: lilac
+    hex: 'D6BED0'
+  - id: bg_blue
+    hex: '032341'
+  - id: bg_purple
+    hex: 'A16793'
+  - id: bg_green
+    hex: '05350B'
+  - id: bg_red
+    hex: '3C0000'
+  - id: bg_pink
+    hex: '61034D'
+  - id: bg_charcoal
+    hex: '323232'
+  - id: bg_brown
+    hex: '41220D'
+  - id: bg_grey
+    hex: '4F4F4F'
+lvgl:
+  displays:
+    - device_display
+  touchscreens:
+    - device_touchscreen
+  theme:
+    label:
+      text_font: my_font28 # set all your labels to use your custom defined font
+      text_align: CENTER
+      text_color: 0xffffff
+      align: TOP_MID
+
+    button:
+      bg_color: bg_purple
+      bg_opa: COVER
+      border_color: 0x53334B
+      border_width: 4
+      text_color: white
+      radius: 20
+      shadow_color: 0x063D71
+      shadow_ofs_x: 0
+      shadow_ofs_y: 0
+      shadow_spread: 3
+      shadow_width: 5
+      shadow_opa: 70%
+      checked: 
+        bg_color: 0x6A4260
+        bg_opa: COVER
+        border_color: black
+        border_width: 2
+        text_color: yellow
+        radius: 20
+        shadow_color: yellow
+        shadow_ofs_x: 0
+        shadow_ofs_y: 0
+        shadow_spread: 5
+        shadow_width: 5
+        shadow_opa: 70%
+
+    switch:
+      bg_color: 0xC0C0C0
+      bg_grad_color: 0xb0b0b0
+      bg_grad_dir: VER
+      bg_opa: COVER
+      checked:
+        bg_color: 0x1d5f96
+        bg_grad_color: 0x03324A
+        bg_grad_dir: VER
+        bg_opa: COVER
+      knob:
+        bg_color: 0xFFFFFF
+        bg_grad_color: 0xC0C0C0
+        bg_grad_dir: VER
+        bg_opa: COVER
+    slider:
+      border_width: 1
+      border_opa: 15%
+      bg_color: 0xcccaca
+      bg_opa: 15%
+      indicator:
+        bg_color: 0x1d5f96
+        bg_grad_color: 0x03324A
+        bg_grad_dir: VER
+        bg_opa: COVER
+      knob:
+        bg_color: 0x2F8CD8
+        bg_grad_color: 0x005782
+        bg_grad_dir: VER
+        bg_opa: COVER
+        border_color: 0x0077b3
+        border_width: 1
+        text_color: 0xFFFFFF
+        
+  style_definitions:
+    - id: main_content
+      bg_color: 0xD6BED0
+      text_color: 0xFFFFFF
+      width: 68%
+      height: 70%    
+      align: TOP_RIGHT
+      border_width: 0
+      radius: 0     
+      
+    - id: bottom_content_left
+      bg_color: 0xD6BED0
+      text_color: bg_purple
+      text_align: LEFT
+      align: BOTTOM_LEFT
+      width: 34%
+      height: 30%    
+      translate_x: 256
+      border_side: TOP
+      border_width: 6
+      border_color: 0x53334B
+      radius: 0  
+
+    - id: bottom_content_right
+      bg_color: 0xD6BED0
+      text_color: bg_purple
+      text_align: LEFT
+      align: BOTTOM_LEFT
+      width: 34%
+      height: 30%    
+      translate_x: 528
+      border_side: TOP
+      border_width: 6
+      border_color: 0x53334B
+      radius: 0    
+      
+
+    - id: left
+      width: 32%
+      height: 100%
+      bg_color: bg_purple
+      border_opa: TRANSP
+      align: TOP_LEFT
+      radius: 0 
+      text_align: CENTER
+      text_color: 0xffffff
+           
+  top_layer:
+      widgets:
+        - obj:
+            styles: left
+            widgets:            
+              - label:
+                  id: display_time
+                  text_font: my_font60
+                  text: "23:59"
+              - label:
+                  id: display_day
+                  text: "Sunday"
+                  translate_y: 50
+              - label:
+                  id: display_date
+                  text: "01 June"
+                  translate_y: 80
+ 
+              - label:
+                  id: display_weather
+                  translate_y: 110
+                  text_font: icon_font_80
+                  text: "\U000F0590" 
+                  
+              - label:
+                  id: display_weather_label
+                  text: " "
+                  translate_y: 190                 
+                  
+              - label:
+                  id: display_out_temp
+                  text: " "
+                  translate_y: 230                 
+                  translate_x: 30
+                  
+              - label:
+                  id: display_out_temp_icon
+                  text_font: icon_font_30
+                  text: "\U000F024A"
+                  translate_y: 230          
+                  translate_x: -50
+                  
+              - label:
+                  id: real_feel_temp_lvgl
+                  text: " "
+                  translate_y: 265                 
+                  translate_x: 30
+                  
+              - label:
+                  id: display_real_feel_temp_icon
+                  text_font: icon_font_30
+                  text: "\U000F050F"
+                  translate_y: 265          
+                  translate_x: -50
+
+  pages:
+    - id: main_page
+      widgets:
+        - obj: 
+            styles: main_content
+            layout: 
+              pad_column: 15
+              pad_row: 10
+              type: GRID 
+              grid_columns: [FR(1), FR(1), FR(1), FR(1)] 
+              grid_rows: [FR(30), FR(5), FR(30), FR(5)] 
+
+            widgets:
+              - button:
+                  checkable: true
+                  id: button_1
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: dining_light_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F18DD"   
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.dining_room_esp_dining_room_esp 
+              - label:
+                  grid_cell_column_pos: 0 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button_2
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: big_light_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0769"
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.big_light_esp 
+                          
+              - label:
+                  grid_cell_column_pos: 1 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button_3
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: back_light_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0769" 
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.back_room_esp                                   
+              - label:
+                  grid_cell_column_pos: 2 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button_4
+                  grid_cell_column_pos: 3
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: living_room_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F04B9"
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.living_room
+
+              - label:                        
+                  grid_cell_column_pos: 3 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                                   
+                 
+
+
+## second row ##
+
+              - button:
+                  checkable: false
+                  id: button_7
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: blue
+                  widgets:
+                    - label:
+                        id: heating_down_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0B26"  
+                  on_press:
+                    then: 
+                      - homeassistant.service:
+                          service: climate.set_temperature
+                          data:
+                            temperature: !lambda "return id(heating_set_temp).state - 1.0;"
+                            entity_id: climate.house_thermostat
+                  
+              - label:
+                  grid_cell_column_pos: 0 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button_8
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: red
+                  widgets:
+                    - label:
+                        id: heating_set_temp_lvgl
+                        translate_y: 15
+                        text_font: my_font40
+                        text: " "
+                    - label:
+                        id: heating_set_temp_label
+                        translate_y: 55
+                        text_font: my_font18
+                        text: "Thermostat"
+                  on_press:
+                    then: 
+                      - switch.toggle: heat_boost                     
+              - label:
+                  grid_cell_column_pos: 1 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button_9
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: heating_actual_temp_lvgl
+                        translate_y: 15
+                        text_font: my_font40
+                        text: " "
+                    - label:
+                        id: heating_actual_temp_label
+                        translate_y: 55
+                        text_font: my_font18
+                        text: "Actual "
+
+                            
+              - label:
+                  grid_cell_column_pos: 2 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button_10
+                  grid_cell_column_pos: 3
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: red
+                  widgets:
+                    - label:
+                        id: heating_up_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0B2C"
+                  on_press:
+                    then: 
+                      - homeassistant.service:
+                          service: climate.set_temperature
+                          data:
+                            temperature: !lambda "return id(heating_set_temp).state + 1.0;"
+                            entity_id: climate.house_thermostat                        
+              - button:
+                  checkable: false
+                  border_width: 0
+                  bg_color: lilac
+                  shadow_spread: 0
+                  shadow_width: 0
+                  grid_cell_column_pos: 3 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH 
+                  widgets:
+                    - label:
+                        id: more_label
+                        translate_y: -8
+                        text_font: my_font16
+                        text_color: bg_purple
+                        text: "More ->"
+                        text_align: CENTER  
+                  on_press:
+                    then:
+                      - lvgl.page.next:
+ 
+
+
+        - obj: 
+            styles: bottom_content_left
+            widgets:  
+              - label:
+                  id: display_elec_cost
+                  align: TOP_LEFT
+                  translate_x: 80  
+                  translate_y: 20
+                  text_font: my_font18
+                  text_color: bg_purple
+                  text: " "
+              - label:
+                  id: display_gas_cost
+                  align: TOP_LEFT
+                  translate_y: 45
+                  translate_x: 80 
+                  text_font: my_font18                  
+                  text_color: bg_purple
+                  text: " "
+                  
+              - label:
+                  id: display_total_energy_cost
+                  align: TOP_LEFT
+                  translate_y: 70
+                  translate_x: 80 
+                  text_font: my_font18                  
+                  text_color: bg_purple
+                  text: " "
+                  
+              - label:
+                  id: display_energy_icon
+                  align: TOP_LEFT
+                  translate_y: 10
+                  text_color: leaf_green
+                  text_font: icon_font_60
+                  text: "\U000F032A"
+                  
+              - label:
+                  id: display_energy_title
+                  align: TOP_LEFT
+                  translate_y: -5
+                  translate_x: 15
+                  text_color: white
+                  text_font: my_font22
+                  text: "Today's Costs"
+        - obj:
+            styles: bottom_content_right 
+            widgets:  
+              - label:
+                  id: display_car_icon
+                  align: TOP_LEFT  
+                  translate_y: 20
+                  text_color: light_blue
+                  text_font: icon_font_60
+                  text: "\U000F0B6C"
+              - label:
+                  id: display_car_title
+                  align: TOP_LEFT
+                  translate_y: -5
+                  translate_x: 25
+                  text_color: white
+                  text_font: my_font22
+                  text: "Car Charge"
+              - label:   
+                  id: display_car_battery
+                  align: TOP_LEFT
+                  translate_x: 70  
+                  translate_y: 20
+                  text_font: my_font18
+                  text_color: bg_purple
+                  text: " "
+              - label:
+                  id: display_car_distance
+                  align: TOP_LEFT
+                  translate_x: 70
+                  translate_y: 50
+                  text_font: my_font18                  
+                  text_color: bg_purple
+                  text: " "
+                  
+    - id: second_page
+      widgets:
+        - obj: 
+            styles: main_content
+            layout: 
+              pad_column: 15
+              pad_row: 10
+              type: GRID 
+              grid_columns: [FR(1), FR(1), FR(1), FR(1)] 
+              grid_rows: [FR(30), FR(5), FR(30), FR(5)] 
+
+            widgets:
+              - button:
+                  checkable: true
+                  id: button2_1
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: wall_light_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F091C"   
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.wall_light_esp
+              - label:
+                  grid_cell_column_pos: 0 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button2_2
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: kitchen_light_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F18DD" 
+                  on_click:
+                    - homeassistant.action:
+                        action: switch.toggle
+                        data:
+                          entity_id: switch.kitchen_ceiling_esp  
+                          
+              - label:
+                  grid_cell_column_pos: 1 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button2_3
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: spare_1_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F0769" 
+                                  
+              - label:
+                  grid_cell_column_pos: 2 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: true
+                  id: button2_4
+                  grid_cell_column_pos: 3
+                  grid_cell_row_pos: 0
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: spare_2_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F18DD"
+              - label:                        
+                  grid_cell_column_pos: 3 # place the widget in
+                  grid_cell_row_pos: 1 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                                   
+                 
+
+
+## second row ##
+
+              - button:
+                  checkable: false
+                  id: button2_7
+                  grid_cell_column_pos: 0
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  pressed:
+                    bg_color: blue
+                  widgets:
+                    - label:
+                        id: spare_3_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F18DD" 
+
+                  
+              - button:
+                  checkable: false
+                  border_width: 0
+                  bg_color: lilac
+                  shadow_spread: 0
+                  shadow_width: 0
+                  grid_cell_column_pos: 0 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH 
+                  widgets:
+                    - label:
+                        id: back_label
+                        translate_y: -8
+                        text_font: my_font16
+                        text_color: bg_purple
+                        text: "<- Back"
+                        text_align: CENTER  
+                  on_press:
+                    then:
+                      - lvgl.page.previous:
+                  
+              - button:
+                  checkable: false
+                  id: button2_8
+                  grid_cell_column_pos: 1
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: spare_4_lvgl
+                        translate_y: 15
+                        text_font: icon_font_80
+                        text: "\U000F18DD"
+
+                        
+              - label:
+                  grid_cell_column_pos: 1 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button2_9
+                  grid_cell_column_pos: 2
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: spare_5_lvgl
+                        translate_y: 15
+                        text_font: icon_font_80
+                        text: "\U000F18DD"                          
+              - label:
+                  grid_cell_column_pos: 2 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+
+              - button:
+                  checkable: false
+                  id: button2_10
+                  grid_cell_column_pos: 3
+                  grid_cell_row_pos: 2
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  widgets:
+                    - label:
+                        id: spare_6_lvgl
+                        text_font: icon_font_80
+                        text: "\U000F18DD"
+                     
+              - label:
+                  grid_cell_column_pos: 3 # place the widget in
+                  grid_cell_row_pos: 3 # the corresponding cell
+                  grid_cell_x_align: STRETCH
+                  grid_cell_y_align: STRETCH
+                  text: " "
+                  text_align: CENTER                  
+                 
+             
+
+        - obj: 
+            styles: bottom_content_left
+
+        - obj:
+            styles: bottom_content_right 
+
