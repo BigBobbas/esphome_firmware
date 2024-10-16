@@ -3,6 +3,7 @@ esphome:
   friendly_name: WT32-SC01 PLUS
   platformio_options:
     board_build.flash_mode: dio
+
 esp32:
   board: esp32-s3-devkitc-1
   variant: ESP32S3
@@ -13,7 +14,8 @@ esp32:
       CONFIG_ESP32S3_DEFAULT_CPU_FREQ_240: y
       CONFIG_ESP32S3_DATA_CACHE_64KB: y
       CONFIG_SPIRAM_FETCH_INSTRUCTIONS: y
-      CONFIG_SPIRAM_RODATA: y
+      CONFIG_ESP_TASK_WDT_TIMEOUT_S: "10"
+
 psram:
   mode: quad
   speed: 80MHZ
