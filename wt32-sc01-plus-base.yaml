@@ -21,8 +21,12 @@ psram:
   speed: 80MHZ
 
 external_components:
+  - source: github://clydebarrow/esphome@i8080
+    components: [ io_bus, i80 ]
+    refresh: 1h
   - source: github://pr#6537
-    components: [ io_bus, i80, spi, ili9xxx ]
+    components: [ spi, ili9xxx ]
+    refresh: 1h
 
 ota: 
   - platform: esphome 
