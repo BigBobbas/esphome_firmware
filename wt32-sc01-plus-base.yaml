@@ -1,5 +1,5 @@
 esphome:
-  name: wt32-sc01 plus
+  name: wt32-sc01-test
   friendly_name: WT32-SC01 PLUS
   platformio_options:
     board_build.flash_mode: dio
@@ -34,8 +34,7 @@ ota:
   - platform: esphome 
 
 api:
-  on_client_connected:
-    - script.execute: backlight_off
+
 logger:
   hardware_uart: USB_SERIAL_JTAG
 
@@ -55,8 +54,6 @@ touchscreen:
     transform:
       swap_xy: true
       mirror_x: true
-    on_touch:
-      - script.execute: backlight_off
 
 i80:
   - id: i80bus
