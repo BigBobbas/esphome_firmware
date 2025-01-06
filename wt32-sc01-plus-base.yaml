@@ -88,6 +88,7 @@ display:
     transform:
       swap_xy: true
     auto_clear_enabled: false
+    data_rate: 8MHz
 
 output:
   - platform: ledc
