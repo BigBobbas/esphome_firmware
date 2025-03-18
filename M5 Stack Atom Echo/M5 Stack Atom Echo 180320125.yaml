@@ -382,6 +382,7 @@ select:
             - voice_assistant.stop
             - delay: 500ms
             - micro_wake_word.stop
+            - switch.turn_off: use_listen_light
 
 micro_wake_word:
   on_wake_word_detected:
